@@ -3,19 +3,19 @@
 registry = "test"
 
 [[package]]
-name = "elitriare/bytenet-max"
-version = "0.1.9"
-dependencies = []
-
-[[package]]
 name = "elttob/fusion"
 version = "0.3.0"
 dependencies = []
 
 [[package]]
+name = "evaera/promise"
+version = "4.0.0"
+dependencies = []
+
+[[package]]
 name = "hamie/steal-a-pirate"
 version = "0.1.0"
-dependencies = [["ByteNetMax", "elitriare/bytenet-max@0.1.9"], ["Charm", "littensy/charm@0.10.0"], ["Fusion", "elttob/fusion@0.3.0"], ["Observers", "sleitnick/observers@0.3.4"], ["Signal", "sleitnick/signal@2.0.3"], ["Streamable", "sleitnick/streamable@1.2.4"], ["TaskQueue", "sleitnick/task-queue@1.0.0"], ["Trove", "sleitnick/trove@1.5.1"], ["ProfileStore", "lm-loleris/profilestore@1.0.3"]]
+dependencies = [["Charm", "littensy/charm@0.10.0"], ["Comm", "sleitnick/comm@1.0.1"], ["Fusion", "elttob/fusion@0.3.0"], ["Net", "sleitnick/net@0.2.0"], ["Observers", "sleitnick/observers@0.3.4"], ["Signal", "sleitnick/signal@2.0.3"], ["Streamable", "sleitnick/streamable@1.2.4"], ["TaskQueue", "sleitnick/task-queue@1.0.0"], ["Trove", "sleitnick/trove@1.5.1"], ["ProfileStore", "lm-loleris/profilestore@1.0.3"]]
 
 [[package]]
 name = "littensy/charm"
@@ -28,8 +28,23 @@ version = "1.0.3"
 dependencies = []
 
 [[package]]
+name = "sleitnick/comm"
+version = "1.0.1"
+dependencies = [["Option", "sleitnick/option@1.0.5"], ["Promise", "evaera/promise@4.0.0"], ["Signal", "sleitnick/signal@2.0.3"]]
+
+[[package]]
+name = "sleitnick/net"
+version = "0.2.0"
+dependencies = []
+
+[[package]]
 name = "sleitnick/observers"
 version = "0.3.4"
+dependencies = []
+
+[[package]]
+name = "sleitnick/option"
+version = "1.0.5"
 dependencies = []
 
 [[package]]
