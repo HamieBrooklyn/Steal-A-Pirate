@@ -15,7 +15,7 @@ dependencies = []
 [[package]]
 name = "hamie/steal-a-pirate"
 version = "0.1.0"
-dependencies = [["Charm", "littensy/charm@0.10.0"], ["Comm", "sleitnick/comm@1.0.1"], ["Fusion", "elttob/fusion@0.3.0"], ["Net", "sleitnick/net@0.2.0"], ["Observers", "sleitnick/observers@0.3.4"], ["Signal", "sleitnick/signal@2.0.3"], ["Streamable", "sleitnick/streamable@1.2.4"], ["TaskQueue", "sleitnick/task-queue@1.0.0"], ["Trove", "sleitnick/trove@1.5.1"], ["ProfileStore", "lm-loleris/profilestore@1.0.3"]]
+dependencies = [["Charm", "littensy/charm@0.10.0"], ["Comm", "sleitnick/comm@1.0.1"], ["Fusion", "elttob/fusion@0.3.0"], ["Net", "sleitnick/net@0.2.0"], ["Observers", "sleitnick/observers@0.3.4"], ["ShapecastHitbox", "teamswordphin/shapecasthitbox@0.2.5"], ["Signal", "sleitnick/signal@2.0.3"], ["Streamable", "sleitnick/streamable@1.2.4"], ["TaskQueue", "sleitnick/task-queue@1.0.0"], ["Trove", "sleitnick/trove@1.5.1"], ["ProfileStore", "lm-loleris/profilestore@1.0.3"]]
 
 [[package]]
 name = "littensy/charm"
@@ -75,4 +75,9 @@ dependencies = []
 [[package]]
 name = "sleitnick/trove"
 version = "1.5.1"
+dependencies = []
+
+[[package]]
+name = "teamswordphin/shapecasthitbox"
+version = "0.2.5"
 dependencies = []
