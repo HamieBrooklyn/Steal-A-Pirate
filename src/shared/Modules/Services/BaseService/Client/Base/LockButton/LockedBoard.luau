@@ -20,6 +20,7 @@ local function LockedBoard(
 	}
 )
 	local board: BillboardGui = scope:Hydrate(BaseLockBoardTemp:Clone())({
+		ResetOnSpawn = false,
 		Adornee = props.adornee,
 		Parent = props.parent,
 	})

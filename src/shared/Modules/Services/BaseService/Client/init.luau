@@ -4,8 +4,6 @@ local Players = game:GetService("Players")
 
 local Platform = require(script.Base.Platform)
 
-local observeCharacter = require(ReplicatedStorage.Shared.Modules.Utilities.observeCharacter)
-
 local SharedTypes = require(script.Parent.Types)
 local SharedData = require(script.Parent.Data)
 local Events = require(script.Events)
@@ -15,6 +13,8 @@ local Base = require(script.Base)
 local Observers = require(ReplicatedStorage.Packages.Observers)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Packages.Net)
+local Signal = require(ReplicatedStorage.Packages.Signal)
+local Promise = require(ReplicatedStorage.Packages.Promise)
 
 local peek = Fusion.peek
 
@@ -23,13 +23,26 @@ local player = Players.LocalPlayer
 local BaseClient = {
 	bases = {} :: { [string]: Base.Base },
 }
+BaseClient.characterAddedToBase = Signal.new()
+BaseClient.characterRemovedFromBase = Signal.new()
+BaseClient.baseLoaded = Signal.new()
 
-function BaseClient.GetBase(): Base.Base
-	for _, v in BaseClient.bases do
-		if peek(v.Owner) == Players.LocalPlayer.UserId then
-			return v
+function BaseClient.GetBase()
+	return Promise.new(function(resolve)
+		for _, v in BaseClient.bases do
+			if peek(v.Owner) == player.UserId then
+				resolve(v)
+				return
+			end
 		end
-	end
+		local loadedCon: RBXScriptConnection
+		loadedCon = BaseClient.baseLoaded:Connect(function(base: Base.Base)
+			if peek(base.Owner) == player.UserId then
+				loadedCon:Disconnect()
+				resolve(base)
+			end
+		end)
+	end)
 end
 
 function BaseClient.init()
@@ -37,12 +50,18 @@ function BaseClient.init()
 	local charactersStolenQueue: { { baseId: string, platformId: string, playerStealing: Player? } } = {}
 	local basesLoadQueue: { [string]: { SharedTypes.BaseSyncData } } = {}
 	local basesResetQueue: { string } = {}
-	local basesLockQueue: { [string]: string } = {}
+	local basesSetLockedQueue: { [string]: string } = {}
+	local basesFullQueue: { [string]: boolean } = {}
 
 	local function loadPlatform(platform: Platform.Platform, data)
 		platform.LastCollected:set(data.lastCollectedTime)
 		platform.CharacterName:set(data.characterName)
 		platform:LoadGenerated()
+
+		local base = BaseClient.bases[data.baseId]
+		if data.characterName and base then
+			BaseClient.characterAddedToBase:Fire(base, data.characterName, platform)
+		end
 	end
 
 	local function loadBase(baseData: SharedTypes.BaseSyncData)
@@ -58,6 +77,7 @@ function BaseClient.init()
 					characterName = v.characterName,
 				})
 			end
+			BaseClient.baseLoaded:Fire(base)
 		else
 			basesLoadQueue[baseId] = baseData
 		end
@@ -71,6 +91,12 @@ function BaseClient.init()
 	local function resetBase(baseId: string)
 		local base = BaseClient.bases[baseId]
 		if base then
+			for _, v in base.Platforms do
+				local charName = peek(v.CharacterName)
+				if charName then
+					BaseClient.characterRemovedFromBase:Fire(base, charName, v)
+				end
+			end
 			base:Reset()
 		else
 			table.insert(basesResetQueue, baseId)
@@ -78,20 +104,48 @@ function BaseClient.init()
 	end
 	Net:Connect("BaseReset", resetBase)
 
-	local function lockBase(baseId: string, lastLockedTime: string)
+	Net:Connect("PlatformsReset", function(platformsReset: SharedTypes.PlatformIdData)
+		for _, v in platformsReset do
+			local base = BaseClient.bases[v.baseId]
+			if base then
+				local platform = base.Platforms[v.platformId]
+				if platform then
+					platform:Reset()
+				end
+			end
+		end
+	end)
+
+	local function setBaseLocked(baseId: string, isLocked: boolean, lastLockedTime: string, lockDuration: number)
 		local base = BaseClient.bases[baseId]
 		if base then
+			base.locked:set(isLocked)
 			base.lastLocked:set(tonumber(lastLockedTime))
+			base.lockDuration:set(lockDuration)
+			if base.lockButton then
+				base.lockButton:Heartbeat()
+			end
 		else
-			basesLockQueue[baseId] = lastLockedTime
+			basesSetLockedQueue[baseId] = {
+				isLocked = isLocked,
+				lastLockedTime = lastLockedTime,
+				lockDuration = lockDuration,
+			}
 		end
 	end
-	Net:Connect("BaseLocked", lockBase)
+	Net:Connect("SetBaseLocked", setBaseLocked)
 
 	local function characterStolen(baseId: string, platformId: string, playerStealing: Player?)
 		local base = BaseClient.bases[baseId]
 		if base then
-			base.Platforms[platformId]:Stolen(playerStealing)
+			local platform = base.Platforms[platformId]
+
+			local charName = peek(platform.CharacterName)
+			if charName then
+				BaseClient.characterRemovedFromBase:Fire(base, charName, platform)
+			end
+
+			platform:Stolen(playerStealing)
 		else
 			table.insert(charactersStolenQueue, {
 				baseId = baseId,
@@ -110,24 +164,32 @@ function BaseClient.init()
 	})
 		for _, v in platforms do
 			if BaseClient.bases[v.baseId] then
-				loadPlatform(BaseClient.bases[v.baseId].Platforms[v.platformId], v)
+				pcall(function()
+					loadPlatform(BaseClient.bases[v.baseId].Platforms[v.platformId], v)
+				end)
 			end
 		end
 	end)
 	Net:Connect("BasePlatformCollected", function(baseId: string, platformId: string)
-		pcall(function()
-			BaseClient.bases[baseId].Platforms[platformId]:Collect()
-		end)
+		BaseClient.bases[baseId].Platforms[platformId]:Collect()
 	end)
 	Net:Connect("BasePlatformSold", function(baseId: string, platformId: string)
-		BaseClient.bases[baseId].Platforms[platformId]:Sold()
+		local base = BaseClient.bases[baseId]
+		local platform = base.Platforms[platformId]
+
+		BaseClient.characterRemovedFromBase:Fire(base, peek(platform.CharacterName), platform)
+
+		platform:Sold()
 	end)
 
-	observeCharacter(player, function(char)
-		local platformBoardsContainer = Instance.new("Folder")
-		platformBoardsContainer.Name = "PlatformBoardsContainer"
-		platformBoardsContainer.Parent = player:WaitForChild("PlayerGui")
-	end)
+	local function setBaseFull(baseId: string, full: boolean)
+		if BaseClient.bases[baseId] then
+			BaseClient.bases[baseId].isFull:set(full)
+		else
+			basesFullQueue[baseId] = full
+		end
+	end
+	Net:Connect("BaseIsFull", setBaseFull)
 
 	Observers.observeTag(SharedData.Tag, function(instance)
 		local base = Base.new(instance)
@@ -158,16 +220,21 @@ function BaseClient.init()
 			loadBase(baseData)
 			basesLoadQueue[id] = nil
 		end
-		local lastLockedTime = basesLockQueue[id]
-		if lastLockedTime then
-			lockBase(id, lastLockedTime)
-			basesLockQueue[id] = nil
+		local lockData = basesSetLockedQueue[id]
+		if lockData then
+			setBaseLocked(id, lockData.isLocked, lockData.lastLockedTime, lockData.lockDuration)
+			basesSetLockedQueue[id] = nil
 		end
 
 		local resetIndex = table.find(basesResetQueue, id)
 		if resetIndex then
 			base:Reset()
 			table.remove(basesResetQueue, resetIndex)
+		end
+
+		local isFull = basesFullQueue[id]
+		if isFull then
+			setBaseFull(id, isFull)
 		end
 
 		return function()

@@ -3,8 +3,18 @@
 registry = "test"
 
 [[package]]
+name = "1foreverhd/topbarplus"
+version = "3.2.5"
+dependencies = []
+
+[[package]]
 name = "elttob/fusion"
 version = "0.3.0"
+dependencies = []
+
+[[package]]
+name = "evaera/cmdr"
+version = "1.12.0"
 dependencies = []
 
 [[package]]
@@ -15,7 +25,12 @@ dependencies = []
 [[package]]
 name = "hamie/steal-a-pirate"
 version = "0.1.0"
-dependencies = [["Charm", "littensy/charm@0.10.0"], ["Comm", "sleitnick/comm@1.0.1"], ["Fusion", "elttob/fusion@0.3.0"], ["Net", "sleitnick/net@0.2.0"], ["Observers", "sleitnick/observers@0.3.4"], ["ShapecastHitbox", "teamswordphin/shapecasthitbox@0.2.5"], ["Signal", "sleitnick/signal@2.0.3"], ["Streamable", "sleitnick/streamable@1.2.4"], ["TaskQueue", "sleitnick/task-queue@1.0.0"], ["Trove", "sleitnick/trove@1.5.1"], ["ProfileStore", "lm-loleris/profilestore@1.0.3"]]
+dependencies = [["Charm", "littensy/charm@0.10.0"], ["Cmdr", "evaera/cmdr@1.12.0"], ["Comm", "sleitnick/comm@1.0.1"], ["Fusion", "elttob/fusion@0.3.0"], ["Net", "sleitnick/net@0.2.0"], ["Observers", "sleitnick/observers@0.3.4"], ["Promise", "evaera/promise@4.0.0"], ["Sensors", "synpixel/sensors@0.1.2"], ["ShapecastHitbox", "teamswordphin/shapecasthitbox@0.2.5"], ["Signal", "sleitnick/signal@2.0.3"], ["Streamable", "sleitnick/streamable@1.2.4"], ["TaskQueue", "sleitnick/task-queue@1.0.0"], ["TopbarPlus", "1foreverhd/topbarplus@3.2.5"], ["Trove", "sleitnick/trove@1.5.1"], ["ViewportFitter", "legendoj1/viewportfitter@1.0.1"], ["ProfileStore", "lm-loleris/profilestore@1.0.3"]]
+
+[[package]]
+name = "legendoj1/viewportfitter"
+version = "1.0.1"
+dependencies = []
 
 [[package]]
 name = "littensy/charm"
@@ -75,6 +90,11 @@ dependencies = []
 [[package]]
 name = "sleitnick/trove"
 version = "1.5.1"
+dependencies = []
+
+[[package]]
+name = "synpixel/sensors"
+version = "0.1.2"
 dependencies = []
 
 [[package]]

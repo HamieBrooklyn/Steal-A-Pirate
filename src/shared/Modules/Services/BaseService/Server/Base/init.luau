@@ -4,12 +4,15 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
 local LasersModelTemp = ReplicatedStorage.Assets.Models.Lasers
+local BaseUnlockPrompt = ReplicatedStorage.Assets.Templates.BaseUnlock
 
 local Services = ReplicatedStorage.Shared.Modules.Services
 local SpawningServiceFold = Services.SpawningService
 
 local PlayerDataServer = require(Services.PlayerDataService.Server)
+local SharedRebirthData = require(Services.RebirthService.Data)
 local PlayerServer = require(Services.PlayerService.Server)
+local IndexServer = require(Services.IndexService.Server)
 
 local SharedSpawningTypes = require(SpawningServiceFold.Types)
 local SharedSpawningData = require(SpawningServiceFold.Data)
@@ -22,16 +25,23 @@ local Events = require(script.Parent.Events)
 
 local Platform = require(script.Platform)
 
-local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local Trove = require(ReplicatedStorage.Packages.Trove)
 local observeCharacter = require(ReplicatedStorage.Shared.Modules.Utilities.observeCharacter)
 local observeDescendants = require(ReplicatedStorage.Shared.Modules.Utilities.observeDescendants)
-local Sound = require(ReplicatedStorage.Shared.Modules.Classes.Sound)
 local Toucher = require(ReplicatedStorage.Shared.Modules.Classes.Toucher)
+local Sound = require(ReplicatedStorage.Shared.Modules.Classes.Sound)
 
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Trove = require(ReplicatedStorage.Packages.Trove)
+local Net = require(ReplicatedStorage.Packages.Net)
+
+local Observer = Fusion.Observer
 local scoped, peek = Fusion.scoped, Fusion.peek
 
-local Base = {}
+local baseFull = Net:RemoteEvent("BaseIsFull")
+
+local Base = {
+	Platorm = Platform,
+}
 Base.__index = Base
 
 type self = {
@@ -44,6 +54,8 @@ type self = {
 	Platforms: { [string]: Platform.Platform },
 	platformsByIndex: { [number]: Platform.Platform },
 
+	unlockPrompt: ProximityPrompt,
+
 	Owner: Fusion.Value<number?, any>,
 	player: Fusion.Value<Player?, any>,
 
@@ -53,11 +65,12 @@ type self = {
 
 	locked: Fusion.Value<boolean, any>,
 	lastLocked: Fusion.Value<number, any>,
+	lockDuration: Fusion.Value<number, any>,
 }
 export type Base = typeof(setmetatable({} :: self, Base))
 
 function Base.new(model: Model): Base
-	local self = setmetatable({}, Base) :: Base
+	local self = setmetatable({}, Base) :: self
 
 	self.Id = HttpService:GenerateGUID(false)
 	model:SetAttribute("BaseId", self.Id)
@@ -84,6 +97,9 @@ function Base.new(model: Model): Base
 	scope:Observer(self.CharactersAdding):onBind(checkCharCount)
 
 	self.BaseFull = scope:Value(false)
+	Observer(scope, self.BaseFull):onChange(function()
+		baseFull:FireAllClients(self.Id, peek(self.BaseFull))
+	end)
 	local function checkFull()
 		local player = peek(self.player)
 		local total = math.clamp(
@@ -100,7 +116,6 @@ function Base.new(model: Model): Base
 			0,
 			SharedData.MaxCharacterCapacity
 		)
-		--print(total)
 		self.BaseFull:set(total == SharedData.MaxCharacterCapacity)
 	end
 	scope:Observer(self.CharactersAdding):onBind(checkFull)
@@ -121,10 +136,17 @@ function Base.new(model: Model): Base
 		self.player:set(if player then player else nil)
 		if player then
 			trove:Add(player.CharacterAdded:Connect(function(char)
+				--if not RunService:IsStudio() then
 				char:PivotTo(model:FindFirstChild("SpawnLocation"):GetPivot())
+				--end
 			end))
 		end
 	end)
+	self._trove:Add(PlayerDataServer.PlayerProfileLoaded:Connect(function(player: Player)
+		if player == peek(self.player) then
+			self:CalculateAndSetLockDuration()
+		end
+	end))
 
 	local playerTrove = Trove.new()
 	scope:Observer(self.player):onBind(function()
@@ -198,13 +220,13 @@ function Base.new(model: Model): Base
 
 	self.locked = scope:Value(false)
 	self.lastLocked = scope:Value(0)
+	self.lockDuration = scope:Value(0)
 
 	local lockTrove = Trove.new()
 	scope:Observer(self.locked):onChange(function()
 		lockTrove:Clean()
 
 		local lockedState = peek(self.locked)
-
 		if not lockedState then
 			return
 		end
@@ -236,13 +258,33 @@ function Base.new(model: Model): Base
 
 		self.lastLocked:set(tick())
 		lockTrove:Add(RunService.Heartbeat:Connect(function()
-			if tick() - peek(self.lastLocked) >= SharedData.LockedDuration then
-				self.locked:set(false)
+			local playerProfile = PlayerDataServer.Profiles[player]
+			if not playerProfile then
+				return
+			end
+			if tick() - peek(self.lastLocked) >= peek(self.lockDuration) then
+				self:SetLocked(false)
 			end
 		end))
-
-		Events.BaseLocked:FireAllClients(self.Id, tostring(peek(self.lastLocked)))
 	end)
+
+	self.unlockPrompt = self._scope:Hydrate(BaseUnlockPrompt:Clone())({
+		ObjectText = self._scope:Computed(function(use)
+			local ownerUserId = use(self.Owner)
+			if ownerUserId then
+				local player = Players:GetPlayerByUserId(ownerUserId)
+				if player then
+					return player.DisplayName
+				end
+			end
+			return ""
+		end),
+		Parent = self.Model:FindFirstChild("EntrancePoint"),
+		Enabled = self._scope:Computed(function(use)
+			return use(self.locked) == true
+		end),
+	})
+	self.unlockPrompt:AddTag("CustomPrompt")
 
 	local toucher = Toucher.new(model:FindFirstChild("Entrance"))
 	trove:Add(toucher)
@@ -250,6 +292,7 @@ function Base.new(model: Model): Base
 		if player == peek(self.player) then
 			local stealing = PlayerServer.players[tostring(player.UserId)].Stealing
 			if peek(stealing.isStealing) and not peek(self.BaseFull) then
+				PlayerDataServer.GetPlayerProfile(player).Data.Steals += 1
 				self:AddCharacter(player, peek(stealing.characterStealingName))
 				stealing:CancelSteal()
 			end
@@ -259,6 +302,19 @@ function Base.new(model: Model): Base
 	return self
 end
 
+function Base.CalculateAndSetLockDuration(self: Base, customDuration: number?): ()
+	local player = peek(self.player)
+	if not player then
+		return
+	end
+	local playerProfile = PlayerDataServer.Profiles[player]
+	self.lockDuration:set(
+		customDuration and customDuration
+			or SharedData.LockedDuration
+				+ (SharedRebirthData.Constants.LockTimerIncrement * playerProfile.Data.Leaderstats.Rebirths)
+	)
+end
+
 function Base.AddCharacter(
 	self: Base,
 	player: Player,
@@ -266,7 +322,12 @@ function Base.AddCharacter(
 	savedData: SharedTypes.SavedPlatformData?,
 	loadedIndex: number?
 )
-	local playerProfile = PlayerDataServer.Profiles[player]
+	local playerProfileData = PlayerDataServer.GetPlayerProfileData(player)
+
+	if not table.find(playerProfileData.UnlockedCharacters, characterName) then
+		table.insert(playerProfileData.UnlockedCharacters, characterName)
+		IndexServer.unlockedNewCharacters:FireClient(player, { characterName })
+	end
 
 	local characterData = SharedSpawningData.Characters.Info[characterName]
 
@@ -289,7 +350,7 @@ function Base.AddCharacter(
 			self.CharactersInBase:set(state)
 
 			if not savedData then
-				playerProfile.Data.Platforms[i] = {
+				playerProfileData.Platforms[i] = {
 					LastCollectedTime = os.time(),
 					CharacterName = characterName,
 				}
@@ -342,6 +403,13 @@ function Base.GetPlatformData(self: Base)
 	return loadedPlatforms
 end
 
+function Base.SetLocked(self: Base, locked: boolean, customDuration: number?): ()
+	self:CalculateAndSetLockDuration(customDuration)
+	self.lastLocked:set(locked and tick() or 0)
+	self.locked:set(locked)
+	Events.SetBaseLocked:FireAllClients(self.Id, locked, tostring(peek(self.lastLocked)), peek(self.lockDuration))
+end
+
 function Base.Load(self: Base)
 	Events.BaseLoaded:FireAllClients({
 		baseId = self.Id,
@@ -356,8 +424,13 @@ function Base.Reset(self: Base)
 	self.locked:set(false)
 	self.CharactersAdding:set({})
 	self.CharactersInBase:set({})
+	self:ResetAllPlatforms(false)
+	Events.BaseReset:FireAllClients(self.Id)
+end
+
+function Base.ResetAllPlatforms(self: Base, remoreFromSave: boolean)
 	for _, v in self.Platforms do
-		v:Reset()
+		v:Reset(remoreFromSave)
 	end
 end
 

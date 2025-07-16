@@ -1,3 +1,4 @@
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -33,6 +34,7 @@ local function PromptBoard(
 		),
 		Enabled = props.Shown,
 		Adornee = props.Adornee,
+		Parent = Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Billboards"),
 	})
 
 	local mainFrame: Frame = promptBoard:WaitForChild("Main")

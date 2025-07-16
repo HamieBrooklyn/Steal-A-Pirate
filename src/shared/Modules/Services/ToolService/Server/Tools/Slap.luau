@@ -117,7 +117,7 @@ function Slap.new(player: Player, tool: Tool): Slap
 			end
 		end,
 		[OnEvent("AncestryChanged")] = function(_, parent: Instance)
-			if parent == player.Character then
+			if parent == player.Character and player.Parent and parent ~= nil then
 				self.slapAnimationTrack:set(
 					parent
 						:FindFirstChildOfClass("Humanoid")

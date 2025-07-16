@@ -2,6 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local PirateInfoBoard = ReplicatedStorage.Assets.Templates.Gui.PirateInfo
 
+local SharedRaritiesData = require(ReplicatedStorage.Shared.Modules.Data.Rarities)
 local SharedTypes = require(script.Parent.Parent.Parent.Types)
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -27,7 +28,10 @@ local function InfoBoard(
 	contentsFrame:FindFirstChild("Name").Text = props.Name
 	contentsFrame:FindFirstChild("Price").Text = props.Data.PriceString
 	contentsFrame:FindFirstChild("CashFlow").Text = props.Data.CashflowString
-	contentsFrame:FindFirstChild("Rarity").Text = props.Data.Rarity
+
+	local rarityLabel = contentsFrame:FindFirstChild("Rarity")
+	rarityLabel.Text = props.Data.Rarity
+	rarityLabel.TextColor3 = SharedRaritiesData.Info[props.Data.Rarity].PrimaryColor
 
 	return board
 end

@@ -1,14 +1,17 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local MoneyParticle = ReplicatedStorage.Assets.VFX.Particles.MoneyParticles
+local CashParticle = ReplicatedStorage.Assets.VFX.Particles.CashParticles
 local InteractPromptTemp = ReplicatedStorage.Assets.Templates.PirateInteract
 
 local SpawningServiceFold = ReplicatedStorage.Shared.Modules.Services.SpawningService
+local Services = ReplicatedStorage.Shared.Modules.Services
 
 local CollectorBoard = require(script.CollectorBoard)
 
-local GuiAnimationClient = require(ReplicatedStorage.Shared.Modules.Services.GuiAnimationService.Client)
+local GuiAnimationClient = require(Services.GuiAnimationService.Client)
+local MonitizationClient = require(Services.MonitizationService.Client)
+local SettingsClient = require(Services.SettingsService.Client)
 
 local SharedSpawningTypes = require(SpawningServiceFold.Types)
 local SharedSpawningData = require(SpawningServiceFold.Data)
@@ -24,10 +27,10 @@ local Sound = require(ReplicatedStorage.Shared.Modules.Classes.Sound)
 local observeCharacter = require(ReplicatedStorage.Shared.Modules.Utilities.observeCharacter)
 
 local Streamable = require(ReplicatedStorage.Packages.Streamable).Streamable
+local Observers = require(ReplicatedStorage.Packages.Observers)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Trove = require(ReplicatedStorage.Packages.Trove)
 local Events = require(script.Parent.Parent.Events)
-local Observers = require(ReplicatedStorage.Packages.Observers)
 
 local scoped, peek = Fusion.scoped, Fusion.peek
 
@@ -44,8 +47,9 @@ type self = {
 
 	model: Model,
 
+	Owner: Fusion.Value<string?, any>,
+
 	Generated: Fusion.Value<number, any>,
-	LastGenerated: number,
 
 	CharacterName: Fusion.Value<string?, any>,
 	LastCollected: Fusion.Value<number?, any>,
@@ -76,9 +80,8 @@ function Platform.new(model: Model, owner: Fusion.Value<string?, any>, baseModel
 
 	self.model = model
 
-	local generated = scope:Value(0)
-	self.Generated = generated
-	self.LastGenerated = 0
+	self.Owner = owner
+	self.Generated = scope:Value(0)
 
 	local characterName = scope:Value(nil)
 	self.CharacterName = characterName
@@ -131,8 +134,8 @@ function Platform.new(model: Model, owner: Fusion.Value<string?, any>, baseModel
 					ActionText = scope:Computed(function(use)
 						return use(self.LocalPlayerIsOwner) and "Sell" or "Steal"
 					end),
-					ObjectText = scope:Computed(function()
-						return `{charModel.Name} {peek(self.CharacterData).PriceString}`
+					ObjectText = scope:Computed(function(use)
+						return `{charModel.Name} {self.CharacterData.PriceString}`
 					end),
 					HoldDuration = SharedData.PlatformUseHoldDuration,
 
@@ -169,7 +172,7 @@ function Platform.new(model: Model, owner: Fusion.Value<string?, any>, baseModel
 	local touchTrove = Trove.new()
 	trove:Add(touchTrove)
 
-	self.Emitter = Particle.new(MoneyParticle, model:WaitForChild("Collect"))
+	self.Emitter = Particle.new(CashParticle, model:WaitForChild("Collect"))
 	trove:Add(self.Emitter)
 
 	self.animatedHighlight = AnimatedHighlight.new({
@@ -219,66 +222,41 @@ function Platform.new(model: Model, owner: Fusion.Value<string?, any>, baseModel
 		checkToucher()
 	end)
 
-	local board: BillboardGui?
-	local disconnectCharObs: Fusion.Observer?
-	local disconnectGeneratedObs: Fusion.Observer?
-	observeCharCleanup = observeCharacter(player, function()
-		if disconnectCharObs then
-			disconnectCharObs()
-			disconnectCharObs = nil
-		end
-		if disconnectGeneratedObs then
-			disconnectGeneratedObs()
-			disconnectGeneratedObs = nil
-		end
+	scope:CollectorBoard({
+		Adornee = adornee,
+		Parent = player:WaitForChild("PlayerGui"):WaitForChild("Billboards"),
 
-		local function check()
-			if peek(generated) > 0 then
-				if not board or not board.Parent then
-					board = scope:CollectorBoard({
-						Adornee = adornee,
-						Parent = player:WaitForChild("PlayerGui"):WaitForChild("PlatformBoardsContainer"),
-
-						Amount = generated,
-					})
-				end
-			else
-				if board then
-					board:Destroy()
-					board = nil
-				end
-			end
-		end
-		disconnectCharObs = scope:Observer(characterName):onBind(check)
-		disconnectGeneratedObs = scope:Observer(generated):onBind(check)
-	end)
+		Amount = self.Generated,
+	})
 
 	return self
 end
 
 function Platform.Collect(self: Platform)
-	self.LastGenerated = 0
-	self.Generated:set(0)
+	pcall(function()
+		self.Generated:set(0)
+	end)
 	self.LastCollected:set(os.time())
 
 	local collectPart = peek(self.CollectPart)
 	if collectPart then
-		Sound.new(ReplicatedStorage.Assets.Sounds.SoundEffects.MoneyCollect, collectPart):Play()
+		Sound.new(ReplicatedStorage.Assets.Sounds.SoundEffects.CashCollect, collectPart):Play()
 	end
 
 	if peek(self.LocalPlayerIsOwner) and collectPart then
-		local moneyLabel: TextLabel? = player
+		local CashLabel: TextLabel? = player
 			:WaitForChild("PlayerGui")
 			:WaitForChild("Main")
 			:WaitForChild("HUD")
+			:WaitForChild("BottomSide")
 			:WaitForChild("BottomContainer")
-			:WaitForChild("Money")
+			:WaitForChild("Cash")
 
 		local spawner
 		spawner = ScreenIconSpawner.new(nil, {
 			Icons = {
 				["rbxassetid://76349172280125"] = math.clamp(
-					math.floor(self.LastGenerated / 10),
+					math.floor(peek(self.Generated) / 10),
 					math.random(1, 2),
 					20
 				),
@@ -286,7 +264,7 @@ function Platform.Collect(self: Platform)
 			WorldPart = collectPart,
 			TargetPosition = UDim2.fromScale(0, 1),
 		}, function()
-			local animObj = GuiAnimationClient.AnimatedObjects[moneyLabel]
+			local animObj = GuiAnimationClient.animatedObjects[CashLabel]
 			animObj.PositionSpring:addVelocity(UDim2.fromScale(0, -5))
 			animObj.RotationSpring:addVelocity(math.random(-120, 120))
 			animObj.SizeSpring:addVelocity(UDim2.fromScale(0.1, 0.1))
@@ -300,16 +278,37 @@ end
 
 function Platform.LoadGenerated(self: Platform)
 	local generated = math.floor((os.time() - peek(self.LastCollected)) * self.CharacterData.Cashflow)
-	self.Generated:set(generated)
-	self.LastGenerated = generated
+	pcall(function()
+		self.Generated:set(generated)
+	end)
 end
 
 function Platform.Heartbeat(self: Platform)
 	local data = self.CharacterData
 	if data then
-		local generated = math.floor(self.LastGenerated + data.Cashflow)
-		self.Generated:set(generated)
-		self.LastGenerated = generated
+		local mult = 0
+		local ownerUserId = peek(self.Owner)
+		if
+			ownerUserId
+			and MonitizationClient.playerGamepasses[ownerUserId]
+			and peek(MonitizationClient.playerGamepasses[ownerUserId]["2XCash"]) == true
+		then
+			mult += 2
+		end
+
+		local generated = math.floor(peek(self.Generated) + (data.Cashflow * math.max(mult, 1)))
+
+		if
+			ownerUserId
+			and SettingsClient.playerSettings[ownerUserId]
+			and peek(SettingsClient.playerSettings[ownerUserId]["AutoCollect"])
+		then
+			if peek(self.Generated) > 0 then
+				self:Collect()
+			end
+		else
+			self.Generated:set(generated)
+		end
 
 		if peek(self.LocalPlayerIsOwner) then
 			self.Emitter:Emit(1)
@@ -340,7 +339,6 @@ function Platform.Reset(self: Platform)
 	self.CharacterData = nil
 	self.LastCollected:set(nil)
 	self.Generated:set(0)
-	self.LastGenerated = 0
 	self.theif:set(nil)
 end
 

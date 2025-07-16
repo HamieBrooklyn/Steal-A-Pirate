@@ -1,0 +1,3 @@
+local SharedQuestTypes = {}
+
+return SharedQuestTypes

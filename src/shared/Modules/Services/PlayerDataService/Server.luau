@@ -7,6 +7,7 @@ local SharedData = require(script.Parent.Data)
 local ProfileStore = require(ServerScriptService.ServerPackages.ProfileStore)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Signal = require(ReplicatedStorage.Packages.Signal)
+local Net = require(ReplicatedStorage.Packages.Net)
 
 local scoped, peek = Fusion.scoped, Fusion.peek
 
@@ -14,6 +15,8 @@ local PlayerDataServer = {
 	data = SharedData,
 }
 PlayerDataServer.PlayerProfileLoaded = Signal.new()
+PlayerDataServer.ProfileLoaded = Net:RemoteEvent("ProfileLoaded")
+PlayerDataServer.newPlayerJoined = Signal.new()
 
 function PlayerDataServer.GetPlayerProfile(player: Player): ProfileStore.Profile<SharedData.PlayerDataTemplate>?
 	local profile = PlayerDataServer.Profiles[player]
@@ -22,17 +25,29 @@ function PlayerDataServer.GetPlayerProfile(player: Player): ProfileStore.Profile
 	end
 	return profile
 end
+function PlayerDataServer.GetPlayerProfileData(player: Player): SharedData.PlayerDataTemplate
+	if PlayerDataServer.Profiles[player] then
+		return PlayerDataServer.Profiles[player].Data
+	end
+end
 
-function PlayerDataServer.AddToLeaderstat(player: Player, statName: string, amount: number)
+function PlayerDataServer.UpdateLeaderstat(player: Player, statName: string, amount: number)
 	local profile = PlayerDataServer.GetPlayerProfile(player)
 	if profile then
 		profile.Data.Leaderstats[statName] += amount
 		player:FindFirstChild("leaderstats"):FindFirstChild(statName).Value += amount
 	end
 end
+function PlayerDataServer.SetLeaderstat(player: Player, statName: string, value: number)
+	local profile = PlayerDataServer.GetPlayerProfile(player)
+	if profile then
+		profile.Data.Leaderstats[statName] = value
+		player:FindFirstChild("leaderstats"):FindFirstChild(statName).Value = value
+	end
+end
 
 function PlayerDataServer.init(): ()
-	local PlayerStore = ProfileStore.New("PlayerStore", SharedData.Template)
+	local PlayerStore = ProfileStore.New("PlayerStore_V0.1", SharedData.Template)
 	local Profiles: { [Player]: typeof(PlayerStore:StartSessionAsync()) } = {}
 	PlayerDataServer.Profiles = Profiles
 
@@ -78,6 +93,11 @@ function PlayerDataServer.init(): ()
 				end
 				player:SetAttribute("ProfileLoaded", true)
 				PlayerDataServer.PlayerProfileLoaded:Fire(player)
+				PlayerDataServer.ProfileLoaded:FireClient(player)
+
+				if Profiles[player].SessionLoadCount == 1 then
+					PlayerDataServer.newPlayerJoined:Fire(player)
+				end
 			else
 				profile:EndSession()
 			end
@@ -94,6 +114,19 @@ function PlayerDataServer.init(): ()
 		local profile = Profiles[player]
 		if profile ~= nil then
 			profile:EndSession()
+		end
+	end)
+
+	Net:Handle("GetFirstSessionTime", function(player)
+		local profile = PlayerDataServer.GetPlayerProfile(player)
+		if profile then
+			return tostring(profile.FirstSessionTime)
+		end
+	end)
+	Net:Handle("GetRedeemedCodes", function(player)
+		local profile = PlayerDataServer.GetPlayerProfile(player)
+		if profile then
+			return profile.Data.CodesRedeemed
 		end
 	end)
 end

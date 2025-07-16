@@ -7,17 +7,23 @@ realm = "shared"
 [dependencies]
 Charm = "littensy/charm@0.10.0"
 Comm = "sleitnick/comm@1.0.1"
+Cmdr = "evaera/cmdr@1.12.0"
 
 Fusion = "elttob/fusion@0.3.0"
 Net = "sleitnick/net@0.2.0"
 Observers = "sleitnick/observers@^0.3.4"
+Promise = "evaera/promise@4.0.0"
 
 ShapecastHitbox = "teamswordphin/shapecasthitbox@0.2.5"
 Streamable = "sleitnick/streamable@1.2.4"
 Signal = "sleitnick/signal@2.0.3"
+Sensors = "synpixel/sensors@0.1.2"
 
+TopbarPlus = "1foreverhd/topbarplus@3.2.5"
 TaskQueue = "sleitnick/task-queue@1.0.0"
 Trove = "sleitnick/trove@1.5.0"
+
+ViewportFitter = "legendoj1/viewportfitter@1.0.1"
 
 [server-dependencies]
 ProfileStore = "lm-loleris/profilestore@1.0.3"

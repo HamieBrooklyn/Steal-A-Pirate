@@ -44,15 +44,14 @@ function Character.new(model: Model, data: SharedTypes.CharacterData): Character
 
 	self.model = model
 
-	trove:Add(observeCharacter(player, function(char)
-		scope:InfoBoard({
-			Parent = player:WaitForChild("PlayerGui"):WaitForChild("InfoPrompts"),
-			Adornee = model,
+	scope:InfoBoard({
+		Parent = player:WaitForChild("PlayerGui"):WaitForChild("Billboards"),
+		ResetOnSpawn = false,
+		Adornee = model,
 
-			Name = model.Name,
-			Data = data,
-		})
-	end))
+		Name = model.Name,
+		Data = data,
+	})
 
 	local prompt: ProximityPrompt?
 	trove:Add(Streamable.primary(model):Observe(function(root: BasePart, rootTrove)

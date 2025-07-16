@@ -1,10 +1,12 @@
 local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local InteractPromptTemp = ReplicatedStorage.Assets.Templates.PirateInteract
 local AnimateScript = ReplicatedStorage.Assets.Templates.Animate
 
+local AnimatedHighlight = require(ReplicatedStorage.Shared.Modules.Classes.AnimatedHighlight)
+
+local SharedRarityData = require(ReplicatedStorage.Shared.Modules.Data.Rarities)
 local SharedTypes = require(script.Parent.Parent.Types)
 local SharedData = require(script.Parent.Parent.Data)
 
@@ -12,6 +14,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Trove = require(ReplicatedStorage.Packages.Trove)
 local Events = require(script.Parent.Events)
 local observeDescendants = require(ReplicatedStorage.Shared.Modules.Utilities.observeDescendants)
+local Sound = require(ReplicatedStorage.Shared.Modules.Classes.Sound)
 
 local scoped, peek = Fusion.scoped, Fusion.peek
 
@@ -64,6 +67,14 @@ function Character.new(
 	self.Character:SetAttribute("CharacterId", self.id)
 	trove:Add(self.Character)
 
+	local rarityData = SharedRarityData.Info[data.Rarity]
+	if rarityData.CharacterHighlight then
+		local hl = Instance.new("Highlight")
+		hl.FillTransparency = 1
+		hl.OutlineColor = rarityData.PrimaryColor
+		hl.Parent = self.Character
+	end
+
 	local player = scope:Value(nil)
 	self.Player = player
 
@@ -77,6 +88,7 @@ function Character.new(
 	self.Character:AddTag(SharedData.Characters.Tag)
 
 	self.Humanoid = self.Character:FindFirstChildOfClass("Humanoid")
+	self.Humanoid.WalkSpeed = self.Character:GetAttribute("CustomWalkSpeed") or 16
 	trove:Add(self.Humanoid.MoveToFinished:Connect(function()
 		local state = peek(self.Player)
 
@@ -116,7 +128,6 @@ function Character.new(
 
 	local targetPos = scope:Value(nil)
 	local lastPlayer: Player?
-	local justSpawned = true
 	local leavingCon: RBXScriptConnection?
 	scope:Observer(player):onBind(function()
 		if leavingCon then
@@ -126,6 +137,8 @@ function Character.new(
 
 		local state: Player? = peek(player)
 		if state ~= nil then
+			Sound.new(ReplicatedStorage.Assets.Sounds.SoundEffects.CharacterCollect, self.Character.PrimaryPart):Play()
+
 			if lastPlayer then
 				local lastBase = BaseServer.GetPlayerBase(state)
 				if lastBase then

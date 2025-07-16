@@ -7,7 +7,10 @@ local Characters = ReplicatedStorage.Assets.Models.Characters
 
 local PirateInteractPrompt = ReplicatedStorage.Assets.Templates.PirateInteract
 
+local MonitizationServer = require(Services.MonitizationService.Server)
 local PlayerDataServer = require(Services.PlayerDataService.Server)
+local SharedRebirthData = require(Services.RebirthService.Data)
+local SettingsServer = require(Services.SettingsService.Server)
 local PlayerServer = require(Services.PlayerService.Server)
 
 local SharedSpawningTypes = require(ReplicatedStorage.Shared.Modules.Services.SpawningService.Types)
@@ -47,6 +50,8 @@ type self = {
 
 	Generated: Fusion.Value<number, any>,
 	Owner: Fusion.Value<number?, any>,
+
+	ownerHas2X: Fusion.Value<boolean, any>,
 }
 export type Platform = typeof(setmetatable({} :: self, Platform))
 
@@ -136,9 +141,48 @@ end
 function Platform.Heartbeat(self: Platform)
 	local data: SharedSpawningTypes.CharacterData = peek(self.CharacterData)
 	if data then
-		local generated = math.floor(peek(self.Generated) + data.Cashflow)
-		self.Generated:set(generated)
+		local mult = 0
+		local ownerUserId = peek(self.Owner)
+		if
+			ownerUserId
+			and MonitizationServer.playerGamepasses[ownerUserId]
+			and MonitizationServer.playerGamepasses[ownerUserId]["2XCash"] == true
+		then
+			mult += 2
+		end
+
+		local generated = math.floor(peek(self.Generated) + (data.Cashflow * math.max(mult, 1)))
+		if
+			ownerUserId
+			and SettingsServer.playerSettings[ownerUserId]
+			and SettingsServer.playerSettings[ownerUserId]["AutoCollect"]
+		then
+			if peek(self.Generated) > 0 then
+				self:Collect()
+			else
+				self:GivePlayerEarnings(generated)
+			end
+		else
+			self.Generated:set(generated)
+		end
 	end
+end
+
+function Platform.GivePlayerEarnings(self: Platform, generated: number)
+	local player = Players:GetPlayerByUserId(peek(self.Owner))
+	if not player then
+		return
+	end
+	local profile = PlayerDataServer.Profiles[player]
+	if not profile then
+		warn(player.Name .. "'s profile hasnt loaded yet")
+		return
+	end
+	local earnings = math.floor(
+		generated * math.max((SharedRebirthData.Constants.CashMultiplier * profile.Data.Leaderstats.Rebirths), 1)
+	)
+	PlayerDataServer.UpdateLeaderstat(player, "Cash", earnings)
+	PlayerDataServer.GetPlayerProfileData(player).TotalEarnings += earnings
 end
 
 function Platform.Collect(self: Platform)
@@ -159,8 +203,11 @@ function Platform.Collect(self: Platform)
 	end
 
 	self.LastCollected = lastCollected
-	PlayerDataServer.AddToLeaderstat(player, "Money", peek(self.Generated))
-	self.Generated:set(0)
+	self:GivePlayerEarnings(peek(self.Generated))
+
+	pcall(function()
+		self.Generated:set(0)
+	end)
 
 	self:Heartbeat()
 
@@ -194,16 +241,21 @@ local function characterInteractIsValid(self: Platform, char: Model): boolean
 	return true
 end
 
-function Platform.Sell(self: Platform)
+function Platform:GetUserProfile()
 	local player = Players:GetPlayerByUserId(peek(self.Owner))
 	if not player then
 		return
 	end
-	local profile = PlayerDataServer.Profiles[player]
-	if not profile then
-		warn(player.Name .. "'s profile hasnt loaded yet")
+	local profile = PlayerDataServer.GetPlayerProfile(player)
+	return player, profile
+end
+
+function Platform.Sell(self: Platform)
+	local player, profile = self:GetUserProfile()
+	if not player or not profile then
 		return
 	end
+
 	local index = tonumber(self.Model.Name)
 	assert(profile.Data.Platforms[index] ~= nil, player.Name .. " had no data for platform index: " .. index)
 
@@ -211,10 +263,12 @@ function Platform.Sell(self: Platform)
 		return
 	end
 
-	PlayerDataServer.AddToLeaderstat(player, "Money", peek(self.CharacterData).Price)
+	local earnings = peek(self.CharacterData).Price
+	PlayerDataServer.UpdateLeaderstat(player, "Cash", earnings)
+	PlayerDataServer.GetPlayerProfileData(player).TotalEarnings += earnings
 
 	self:Collect()
-	self:Reset()
+	self:Reset(false)
 
 	profile.Data.Platforms[index] = nil
 
@@ -251,8 +305,26 @@ function Platform.Steal(self: Platform, playerStealing: Player)
 	Events.CharacterStolen:FireAllClients(self.BaseId, self.Id, playerStealing)
 end
 
-function Platform.Reset(self: Platform)
+function Platform.Reset(self: Platform, removeFromSave: boolean)
+	if removeFromSave then
+		local player, profile = self:GetUserProfile()
+		if not player or not profile then
+			return
+		end
+		local index = tonumber(self.Model.Name)
+		profile.Data.Platforms[index] = nil
+	end
+
 	self.WasReset:Fire()
+
+	local charName = peek(self.CharacterName)
+	if charName then
+		Events.platformsResetTask:Add({
+			baseId = self.BaseId,
+			platformId = self.Id,
+		})
+	end
+
 	self.Generated:set(0)
 	self.LastCollected = nil
 	self.CharacterData:set(nil)

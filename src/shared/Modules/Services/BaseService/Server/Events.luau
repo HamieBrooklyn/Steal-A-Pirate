@@ -16,7 +16,12 @@ BaseServerEvents.PlatformCollected = Net:RemoteEvent("BasePlatformCollected")
 BaseServerEvents.PlatformSold = Net:RemoteEvent("BasePlatformSold")
 BaseServerEvents.CharacterStolen = Net:RemoteEvent("BaseCharacterStolen")
 
-BaseServerEvents.BaseLocked = Net:RemoteEvent("BaseLocked")
+BaseServerEvents.platformsReset = Net:RemoteEvent("PlatformsReset")
+BaseServerEvents.platformsResetTask = TaskQueue.new(function(...)
+	BaseServerEvents.platformsReset:FireAllClients(...)
+end)
+
+BaseServerEvents.SetBaseLocked = Net:RemoteEvent("SetBaseLocked")
 BaseServerEvents.BaseReset = Net:RemoteEvent("BaseReset")
 
 return BaseServerEvents

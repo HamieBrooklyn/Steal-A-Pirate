@@ -17,11 +17,11 @@ function GuiTagClient.init()
 				return
 			end
 			task.spawn(module.new, instance)
-			return function()
-				if module.Destroy then
-					module:Destroy()
-				end
-			end
+			-- return function()
+			-- 	if module.Destroy then
+			-- 		module:Destroy()
+			-- 	end
+			-- end
 		end)
 	end
 end

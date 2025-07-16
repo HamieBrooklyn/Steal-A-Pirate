@@ -1,0 +1,14 @@
+[package]
+name = "synpixel/sensors"
+description = "Lightweight anti-cheat framework for Roblox."
+license = "MIT"
+authors = ["synpixel"]
+version = "0.1.2"
+
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+exclude = ["**"]
+include = ["src", "src/**", "default.project.json", "wally.lock", "wally.toml"]
+
+[dependencies]

@@ -8,6 +8,8 @@ local abbreviateNumber = require(ReplicatedStorage.Shared.Modules.Utilities.abbr
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 
+local peek = Fusion.peek
+
 type UsedAs<T> = Fusion.UsedAs<T>
 
 local function CollectorBoard(
@@ -21,6 +23,8 @@ local function CollectorBoard(
 ): Fusion.Child
 	local offsetSpring = scope:Spring(scope:Value(CollectorBoardTemp.StudsOffset), 10, 0.5)
 	local board: BillboardGui = scope:Hydrate(CollectorBoardTemp:Clone())({
+		ResetOnSpawn = false,
+
 		Parent = props.Parent,
 		Adornee = props.Adornee,
 

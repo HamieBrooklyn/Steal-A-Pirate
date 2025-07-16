@@ -1,16 +1,22 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Modules = ReplicatedStorage.Shared.Modules
+local Services = Modules.Services
+local RebirthService = Services.RebirthService
+
+local RebirthClient = require(RebirthService.Client)
+local SharedRebirthData = require(RebirthService.Data)
+
 local SharedData = require(script.Parent.Parent.Parent.Data)
 
 local LockedBoard = require(script.LockedBoard)
 
-local Toucher = require(ReplicatedStorage.Shared.Modules.Classes.Toucher)
+local Toucher = require(Modules.Classes.Toucher)
 local Events = require(script.Parent.Parent.Events)
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Trove = require(ReplicatedStorage.Packages.Trove)
-local observeCharacter = require(ReplicatedStorage.Shared.Modules.Utilities.observeCharacter)
 
 local peek, scoped = Fusion.peek, Fusion.scoped
 
@@ -24,6 +30,8 @@ type self = {
 	trove: Trove.Trove,
 
 	secondsLeft: Fusion.Value<number, any>,
+	lockDuration: Fusion.Value<number, any>,
+	locked: Fusion.Value<boolean, any>,
 }
 export type LockButton = typeof(setmetatable({} :: self, LockButton))
 
@@ -31,6 +39,8 @@ function LockButton.new(
 	button: BasePart,
 	props: {
 		lastLocked: Fusion.Value<number, any>,
+		lockDuration: Fusion.Value<number, any>,
+		locked: Fusion.Value<boolean, any>,
 
 		owner: Fusion.Value<string, any>,
 		baseId: string,
@@ -45,6 +55,8 @@ function LockButton.new(
 
 	self.secondsLeft = self.scope:Value(0)
 	self.lastLocked = props.lastLocked
+	self.lockDuration = props.lockDuration
+	self.locked = props.locked
 
 	local toucher = Toucher.new(button)
 	self.trove:Add(toucher)
@@ -67,28 +79,26 @@ function LockButton.new(
 		end)
 	end)
 
-	self.trove:Add(observeCharacter(player, function()
-		local playerGui = player:WaitForChild("PlayerGui")
-		local container = playerGui:FindFirstChild("LockedBoardsContainer")
-			or self.scope:New("Folder")({
-				Name = "LockedBoardsContainer",
-				Parent = playerGui,
-			})
-		self.scope:LockedBoard({
-			parent = container,
-			adornee = button,
+	self.scope:LockedBoard({
+		parent = Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Billboards"),
+		adornee = button,
 
-			secondsLeft = self.secondsLeft,
-		})
-	end))
+		secondsLeft = self.secondsLeft,
+	})
 
 	return self
 end
 
-function LockButton:Heartbeat()
-	self.secondsLeft:set(
-		math.clamp(SharedData.LockedDuration - (tick() - peek(self.lastLocked)), 0, SharedData.LockedDuration)
-	)
+function LockButton.Heartbeat(self: LockButton)
+	-- local duration = SharedData.LockedDuration
+	-- 	+ (SharedRebirthData.Constants.LockTimerIncrement * peek(RebirthClient.rebirths))
+	local duration = peek(self.lockDuration)
+	self.secondsLeft:set(math.clamp(duration - (tick() - peek(self.lastLocked)), 0, duration))
+	if peek(self.secondsLeft) == 0 then
+		self.locked:set(false)
+	else
+		self.locked:set(true)
+	end
 end
 
 function LockButton.Destroy(self: LockButton): ()

@@ -4,18 +4,19 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Services = ReplicatedStorage.Shared.Modules.Services
 
 local PlayerDataServer = require(Services.PlayerDataService.Server)
+local IndexServer = require(Services.IndexService.Server)
 
 local SharedSpawningData = require(Services.SpawningService.Data)
 
 local SharedTypes = require(script.Parent.Types)
 local SharedData = require(script.Parent.Data)
+local Events = require(script.Events)
 
 local Base = require(script.Base)
 
 local Observers = require(ReplicatedStorage.Packages.Observers)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Packages.Net)
-local Events = require(script.Events)
 
 local peek = Fusion.peek
 
@@ -63,11 +64,19 @@ function BaseServer.init()
 				continue
 			end
 
-			local profile = PlayerDataServer.Profiles[player]
-			for i, savedPlatform: SharedTypes.SavedPlatformData in profile.Data.Platforms do
+			local playerProfileData = PlayerDataServer.GetPlayerProfileData(player)
+			local charactersNotUnlockedNames = {}
+			for i, savedPlatform: SharedTypes.SavedPlatformData in playerProfileData.Platforms do
 				base:AddCharacter(player, savedPlatform.CharacterName, savedPlatform, i)
+
+				if not table.find(playerProfileData.UnlockedCharacters, savedPlatform.CharacterName) then
+					table.insert(charactersNotUnlockedNames, savedPlatform.CharacterName)
+					table.insert(playerProfileData.UnlockedCharacters, savedPlatform.CharacterName)
+				end
 			end
 			base:Load()
+
+			IndexServer.unlockedNewCharacters:FireClient(player, charactersNotUnlockedNames)
 
 			break
 		end
@@ -77,7 +86,6 @@ function BaseServer.init()
 			if peek(v.Owner) == player.UserId then
 				v.Owner:set(nil)
 				v:Reset()
-				Events.BaseReset:FireAllClients(v.Id)
 				return
 			end
 		end
@@ -132,7 +140,11 @@ function BaseServer.init()
 		assert(base, "Base model sent did not exist")
 		assert(peek(base.Owner) == player.UserId, player.Name .. " was not the owner of sent base")
 
-		base.locked:set(true)
+		if tick() - peek(base.lastLocked) < peek(base.lockDuration) then
+			return
+		end
+
+		base:SetLocked(true)
 	end)
 
 	Observers.observeTag(SharedData.Tag, function(instance)

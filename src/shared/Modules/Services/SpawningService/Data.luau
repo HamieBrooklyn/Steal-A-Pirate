@@ -3,20 +3,29 @@ local SpawnData = {}
 SpawnData.Spawning = {
 	Tag = "Spawner",
 	Spawners = {
-		["MainPortals"] = {
-			SpawnCooldown = 1, -- 1
-			Whitelist = { "Red Hair" },
+		["Main Portals"] = {
+			DefaultCharacter = "Weak Loafy",
+
+			SpawnCooldown = 2.5, -- 2.5
+
+			Whitelist = {},
 			Blacklist = {},
+
+			RarityGuaranteeCooldowns = {
+				["Legendary"] = 20, -- 15 * 60
+				["Mythical"] = 30, -- 30 * 60
+			},
 		},
 	},
+
 	RaritySpawnRates = {
 		Common = 0.45,
 		Uncommon = 0.25,
 		Rare = 0.12,
 		Epic = 0.08,
-		Legendary = 0.03,
-		Mythical = 0.01,
-		Unknown = 0.0005,
+		Legendary = 0.003,
+		Mythical = 0.001,
+		Unknown = 0.00005,
 	},
 }
 
