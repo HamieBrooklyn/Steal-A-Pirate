@@ -56,7 +56,7 @@ function RebirthServer.init()
 
 		local rebirthLevelData = SharedData.Levels[rebirths + 1]
 		if rebirthLevelData then
-			assert(profile.Data.Leaderstats.Cash >= rebirthLevelData.CashRequired, "Player didnt have enough Cash")
+			assert(profile.Data.Leaderstats.Beli >= rebirthLevelData.BeliRequired, "Player didnt have enough Beli")
 
 			local charactersLeft = {}
 			for _, v in rebirthLevelData.Characters do
@@ -83,8 +83,8 @@ function RebirthServer.init()
 		base:ResetAllPlatforms(true)
 
 		PlayerDataServer.UpdateLeaderstat(player, "Rebirths", 1)
-		local earnings = SharedData.Constants.StartingCash * profile.Data.Leaderstats.Rebirths
-		PlayerDataServer.SetLeaderstat(player, "Cash", earnings)
+		local earnings = SharedData.Constants.StartingBeli * profile.Data.Leaderstats.Rebirths
+		PlayerDataServer.SetLeaderstat(player, "Beli", earnings)
 		PlayerDataServer.GetPlayerProfileData(player).TotalEarnings += earnings
 
 		return true

@@ -38,13 +38,14 @@ function AnimatedObject.new(object: GuiObject): AnimatedObject
 
 	local size = scope:Value(object.Size)
 	self.Size = size
-	local sizeSpring = scope:Spring(size, 25, 0.5)
-	self.SizeSpring = sizeSpring
+	local animatedSize = object:GetAttribute("SizeWithSpring") and scope:Spring(size, 25, 0.5)
+		or scope:Tween(size, TweenInfo.new(0.25))
+	self.AnimatedSize = animatedSize
 
 	scope:Hydrate(object)({
 		Position = positionSpring,
 		Rotation = rotationSpring,
-		Size = sizeSpring,
+		Size = animatedSize,
 	})
 
 	return self

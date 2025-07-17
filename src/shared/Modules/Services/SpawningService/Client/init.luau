@@ -19,6 +19,8 @@ local player = Players.LocalPlayer
 
 local SpawningClient = {
 	spawners = {} :: { [string]: Spawner.Spawner },
+	spawnerIdByName = {} :: { [string]: string },
+
 	characters = {} :: { [string]: Character.Character },
 	characterNamesByRarity = {} :: { [string]: { string } },
 	characterNamesByIndex = {} :: { string },
@@ -60,6 +62,7 @@ function SpawningClient.init()
 	Observers.observeTag("Spawner", function(instance)
 		local spawner = Spawner.new(instance)
 		SpawningClient.spawners[spawner.id] = spawner
+		SpawningClient.spawnerIdByName[instance.Name] = spawner.id
 		return function()
 			spawner:Destroy()
 			SpawningClient.spawners[spawner.id] = nil

@@ -24,6 +24,8 @@ Spawner.__index = Spawner
 type self = {
 	id: string,
 
+	folder: Folder,
+
 	scope: Fusion.Scope<any>,
 	trove: Trove.Trove,
 
@@ -38,6 +40,8 @@ function Spawner.new(folder: Folder): Spawner
 	local self = setmetatable({}, Spawner) :: Spawner
 
 	self.id = folder:GetAttribute("SpawnerId")
+
+	self.folder = folder
 
 	self.scope = scoped(Fusion)
 	self.trove = Trove.new()

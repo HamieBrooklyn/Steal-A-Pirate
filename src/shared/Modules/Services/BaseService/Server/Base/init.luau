@@ -31,8 +31,10 @@ local Toucher = require(ReplicatedStorage.Shared.Modules.Classes.Toucher)
 local Sound = require(ReplicatedStorage.Shared.Modules.Classes.Sound)
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 local Trove = require(ReplicatedStorage.Packages.Trove)
 local Net = require(ReplicatedStorage.Packages.Net)
+local Zoneplus = require(ReplicatedStorage.Packages.Zoneplus)
 
 local Observer = Fusion.Observer
 local scoped, peek = Fusion.scoped, Fusion.peek
@@ -62,10 +64,11 @@ type self = {
 	CharactersInBase: Fusion.Value<{ SharedSpawningTypes.CharacterData }, any>,
 	CharactersAdding: Fusion.Value<{ Character.Character }, any>,
 	BaseFull: Fusion.Value<boolean, any>,
+	characterAdded: Signal.Signal,
 
-	locked: Fusion.Value<boolean, any>,
-	lastLocked: Fusion.Value<number, any>,
 	lockDuration: Fusion.Value<number, any>,
+	lastLocked: Fusion.Value<number, any>,
+	locked: Fusion.Value<boolean, any>,
 }
 export type Base = typeof(setmetatable({} :: self, Base))
 
@@ -85,6 +88,7 @@ function Base.new(model: Model): Base
 	self.CharactersInBase = scope:Value({})
 	self.CharactersAdding = scope:Value({})
 	self.characterCount = scope:Value(0)
+	self.characterAdded = Signal.new()
 
 	local function checkCharCount()
 		local inBaseCount = 0
@@ -286,9 +290,16 @@ function Base.new(model: Model): Base
 	})
 	self.unlockPrompt:AddTag("CustomPrompt")
 
-	local toucher = Toucher.new(model:FindFirstChild("Entrance"))
-	trove:Add(toucher)
-	trove:Add(toucher.PlayerTouched:Connect(function(player: Player)
+	local playersAtEntrance = {}
+	local playersInBase = {}
+
+	local entranceZone = Zoneplus.new(model:FindFirstChild("Entrance"))
+	trove:Add(entranceZone)
+	entranceZone.playerEntered:Connect(function(player: Player)
+		if not table.find(playersAtEntrance, player) then
+			table.insert(playersAtEntrance, player)
+		end
+
 		if player == peek(self.player) then
 			local stealing = PlayerServer.players[tostring(player.UserId)].Stealing
 			if peek(stealing.isStealing) and not peek(self.BaseFull) then
@@ -297,7 +308,35 @@ function Base.new(model: Model): Base
 				stealing:CancelSteal()
 			end
 		end
-	end))
+	end)
+	entranceZone.playerExited:Connect(function(player: Player)
+		local entranceIndex = table.find(playersAtEntrance, player)
+		local baseIndex = table.find(playersInBase, player)
+		if entranceIndex and not baseIndex then
+			table.remove(playersAtEntrance, entranceIndex)
+		end
+	end)
+
+	local baseZone = trove:Add(Zoneplus.new(model:FindFirstChild("BaseZone")))
+	baseZone.playerEntered:Connect(function(player: Player)
+		if not table.find(playersInBase, player) then
+			table.insert(playersInBase, player)
+		end
+
+		local ownerPlayer = peek(self.player)
+		if player == ownerPlayer then
+			return
+		end
+		if not table.find(playersAtEntrance, player) or peek(self.locked) then
+			player:LoadCharacter()
+		end
+	end)
+	baseZone.playerExited:Connect(function(player: Player)
+		local i = table.find(playersInBase, player)
+		if i then
+			table.remove(playersInBase, i)
+		end
+	end)
 
 	return self
 end
@@ -355,6 +394,8 @@ function Base.AddCharacter(
 					CharacterName = characterName,
 				}
 			end
+
+			self.characterAdded:Fire(characterName)
 
 			break
 		end

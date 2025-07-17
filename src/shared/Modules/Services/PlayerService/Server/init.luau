@@ -12,6 +12,9 @@ local PlayerServer = {
 PlayerServer.PlayerLoaded = Signal.new()
 
 function PlayerServer.init()
+	local HttpService = game:GetService("HttpService")
+	_G.funnelSessionId = HttpService:GenerateGUID()
+
 	Observers.observePlayer(function(player)
 		local id = tostring(player.UserId)
 

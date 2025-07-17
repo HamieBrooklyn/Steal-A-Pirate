@@ -40,12 +40,12 @@ type self = {
 	rootSeed: Fusion.Value<number?, any>,
 	rebirths: Fusion.Value<number?, any>,
 
-	CashVal: Fusion.Value<NumberValue?, any>,
-	Cash: Fusion.Value<number?, any>,
+	BeliVal: Fusion.Value<NumberValue?, any>,
+	Beli: Fusion.Value<number?, any>,
 
-	CashRequiredText: Fusion.Value<string, any>,
+	BeliRequiredText: Fusion.Value<string, any>,
 
-	hasEnoughCash: Fusion.Value<boolean, any>,
+	hasEnoughBeli: Fusion.Value<boolean, any>,
 	ownsAllCharacters: Fusion.Value<boolean, any>,
 
 	charactersRequiredNames: Fusion.Value<{ string }, any>,
@@ -64,7 +64,7 @@ type self = {
 }
 export type RebirthMenu = typeof(setmetatable({} :: self, RebirthMenu))
 export type RebirthLevel = {
-	CashRequired: number,
+	BeliRequired: number,
 	Characters: { string },
 }
 
@@ -79,12 +79,12 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	self.rootSeed = self.scope:Value(nil) :: Fusion.Value<number?, any>
 	self.rebirths = rebirths :: Fusion.Value<number?, any>
 
-	self.CashVal = self.scope:Value(nil) :: Fusion.Value<NumberValue?, any>
-	self.Cash = self.scope:Value(nil) :: Fusion.Value<number?, any>
+	self.BeliVal = self.scope:Value(nil) :: Fusion.Value<NumberValue?, any>
+	self.Beli = self.scope:Value(nil) :: Fusion.Value<number?, any>
 
-	self.CashRequiredText = self.scope:Value("") :: Fusion.Value<string, any>
+	self.BeliRequiredText = self.scope:Value("") :: Fusion.Value<string, any>
 
-	self.hasEnoughCash = self.scope:Value(false) :: Fusion.Value<boolean, any>
+	self.hasEnoughBeli = self.scope:Value(false) :: Fusion.Value<boolean, any>
 	self.ownsAllCharacters = self.scope:Value(false) :: Fusion.Value<boolean, any>
 
 	self.charactersRequiredNames = self.scope:Value({}) :: Fusion.Value<{ string }, any>
@@ -94,15 +94,15 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	self.menuShown = self.scope:Value(false) :: Fusion.Value<boolean, any>
 
 	self.canRebirth = self.scope:Computed(function(use)
-		return use(self.hasEnoughCash) and use(self.ownsAllCharacters)
+		return use(self.hasEnoughBeli) and use(self.ownsAllCharacters)
 	end)
 	self.checkProgress = self.scope:Computed(function(use)
 		local progress = 0
 
-		local CashState: number? = use(self.Cash)
+		local BeliState: number? = use(self.Beli)
 		local levelDataState: RebirthLevel? = peek(self.rebirthLevelData)
 
-		if CashState then
+		if BeliState then
 			local fulfilled = 0
 			local totalItems = #use(self.charactersRequiredNames)
 
@@ -113,14 +113,14 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 				end
 			end
 
-			local CashProgress = math.clamp(
-				(CashState / (levelDataState and levelDataState.CashRequired or SharedData.Constants.OverCost)),
+			local BeliProgress = math.clamp(
+				(BeliState / (levelDataState and levelDataState.BeliRequired or SharedData.Constants.OverCost)),
 				0,
 				1
 			)
 
 			local itemProgress = if totalItems > 0 then fulfilled / totalItems else 0
-			local finalProgress = (CashProgress + itemProgress) / 2
+			local finalProgress = (BeliProgress + itemProgress) / 2
 
 			progress = finalProgress
 		end
@@ -180,22 +180,22 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 
 	self.random = self.scope:Value(nil) :: Fusion.Value<Random?, any>
 
-	local CashChangeCleanup: (() -> ())?
-	self.scope:Observer(self.CashVal):onChange(function()
-		if CashChangeCleanup then
-			CashChangeCleanup()
-			CashChangeCleanup = nil
+	local BeliChangeCleanup: (() -> ())?
+	self.scope:Observer(self.BeliVal):onChange(function()
+		if BeliChangeCleanup then
+			BeliChangeCleanup()
+			BeliChangeCleanup = nil
 		end
 
-		local CashValState: NumberValue? = peek(self.CashVal)
-		if CashValState then
-			CashChangeCleanup = self.trove:Add(Observers.observeProperty(CashValState, "Value", function(value)
-				self.Cash:set(value)
+		local BeliValState: NumberValue? = peek(self.BeliVal)
+		if BeliValState then
+			BeliChangeCleanup = self.trove:Add(Observers.observeProperty(BeliValState, "Value", function(value)
+				self.Beli:set(value)
 
 				local levelDataState: RebirthLevel = peek(self.rebirthLevelData)
-				local required = levelDataState and levelDataState.CashRequired or SharedData.Constants.OverCost
-				self.hasEnoughCash:set(value >= required)
-				self.CashRequiredText:set(`{abbreviateNumber(value)}/{abbreviateNumber(required)}`)
+				local required = levelDataState and levelDataState.BeliRequired or SharedData.Constants.OverCost
+				self.hasEnoughBeli:set(value >= required)
+				self.BeliRequiredText:set(`{abbreviateNumber(value)}/{abbreviateNumber(required)}`)
 				return function() end
 			end))
 		end
@@ -258,7 +258,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 		Text = self.CashRequiredText,
 		TextColor3 = self.scope:Tween(
 			self.scope:Computed(function(use)
-				return use(self.hasEnoughCash) and Color3.new(0, 1, 0) or startTextColor
+				return use(self.hasEnoughBeli) and Color3.new(0, 1, 0) or startTextColor
 			end),
 			TweenInfo.new(0.5)
 		),
@@ -312,10 +312,10 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 
 	-- Managing rewards:
 	self.scope:RewardFrame({
-		titleText = "Starting Cash",
+		titleText = "Starting Beli",
 		infoText = self.scope:Computed(function(use)
 			local rebirthsState: number? = use(self.rebirths)
-			return rebirthsState and `${abbreviateNumber(SharedData.Constants.StartingCash * (rebirthsState + 1))}`
+			return rebirthsState and `${abbreviateNumber(SharedData.Constants.StartingBeli * (rebirthsState + 1))}`
 				or ""
 		end),
 		titleGradient = Gradients.Apple,
@@ -323,10 +323,10 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	}).Parent =
 		rewardsFrame:WaitForChild("Contents")
 	self.scope:RewardFrame({
-		titleText = "Cash Multiplier",
+		titleText = "Beli Multiplier",
 		infoText = self.scope:Computed(function(use)
 			local rebirthsState: number? = use(self.rebirths)
-			return rebirthsState and `x{SharedData.Constants.CashMultiplier * (rebirthsState + 1)}` or ""
+			return rebirthsState and `x{SharedData.Constants.BeliMultiplier * (rebirthsState + 1)}` or ""
 		end),
 		titleGradient = Gradients.Banana,
 		infoTextColor = Color3.new(1, 1, 0),

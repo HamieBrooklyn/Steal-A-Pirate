@@ -1,5 +1,6 @@
-local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local AnalyticsService = game:GetService("AnalyticsService")
+local HttpService = game:GetService("HttpService")
 
 local Services = ReplicatedStorage.Shared.Modules.Services
 
@@ -176,14 +177,16 @@ function Spawner.SpawnCharacter(self: Spawner, characterName: string)
 
 		local profile = PlayerDataServer.GetPlayerProfile(player)
 		if profile then
-			if profile.Data.Leaderstats.Cash < characterData.Price then
+			if profile.Data.Leaderstats.Beli < characterData.Price then
 				return
 			end
-			PlayerDataServer.UpdateLeaderstat(player, "Cash", -characterData.Price)
+			PlayerDataServer.UpdateLeaderstat(player, "Beli", -characterData.Price)
 			character.Player:set(player)
 
 			self.playerBoughtCharacter:Fire(player, character)
 			Events.BoughtCharacter:FireAllClients(player, character.id)
+
+			AnalyticsService:LogFunnelStepEvent(player, "BoughtCharacter", _G.funnelSessionId, 1, characterName)
 		end
 	end))
 	character._trove:Add(function()
@@ -219,6 +222,9 @@ function Spawner.Heartbeat(self: Spawner)
 		if os.time() - v > self.Data.RarityGuaranteeCooldowns[i] then
 			self.lastGuaranteedRaritySpawn[i] = os.time()
 			local charactersRange = self.CharactersByRarity[i]
+			if not charactersRange then
+				continue
+			end
 			table.insert(self.guaranteedSpawnsQueue, charactersRange[self.Random:NextInteger(1, #charactersRange)])
 		end
 	end

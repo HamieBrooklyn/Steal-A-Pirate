@@ -1,12 +1,13 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local PromptTemplate = ReplicatedStorage.Assets.Templates.Gui.Prompt
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local Trove = require(ReplicatedStorage.Packages.Trove)
 
+local OnEvent = Fusion.OnEvent
 local peek = Fusion.peek
 
 type UsedAs<T> = Fusion.UsedAs<T>
@@ -22,9 +23,12 @@ local function PromptBoard(
 
 		HoldDuration: UsedAs<number>,
 		Holding: UsedAs<boolean>,
+
+		startHolding: () -> (),
+		endHolding: () -> (),
 	}
 )
-	local promptBoard: BillboardGui = scope:Hydrate(PromptTemplate:Clone())({
+	local promptBoard: typeof(PromptTemplate) = scope:Hydrate(PromptTemplate:Clone())({
 		Size = scope:Spring(
 			scope:Computed(function(use)
 				return use(props.Shown) and PromptTemplate.Size or UDim2.new()
@@ -37,13 +41,19 @@ local function PromptBoard(
 		Parent = Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Billboards"),
 	})
 
-	local mainFrame: Frame = promptBoard:WaitForChild("Main")
+	local mainFrame = promptBoard:WaitForChild("Main")
 	scope:Hydrate(mainFrame:WaitForChild("ActionText"))({
 		Text = props.ActionText,
 	})
 	scope:Hydrate(mainFrame:WaitForChild("ObjectText"))({
 		Text = props.ObjectText,
 	})
+	scope:Hydrate(mainFrame:WaitForChild("Interact"))({
+		[OnEvent("MouseButton1Down")] = props.startHolding,
+		[OnEvent("MouseButton1Up")] = props.endHolding,
+	})
+	mainFrame:WaitForChild("Icon").Image = UserInputService.TouchEnabled and "rbxassetid://103847203345625"
+		or "rbxassetid://91160084996241"
 
 	local transparencyProgress = scope:Value(0)
 	local holdDuration = scope:Value(peek(props.HoldDuration))

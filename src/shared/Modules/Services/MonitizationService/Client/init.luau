@@ -18,6 +18,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Packages.Net)
 local Observers = require(ReplicatedStorage.Packages.Observers)
 local TouchToProduct = require(script.TouchToProduct)
+local PromptToProduct = require(script.PromptToProduct)
 
 local Value, New, Children = Fusion.Value, Fusion.New, Fusion.Children
 local scoped, peek = Fusion.scoped, Fusion.peek
@@ -62,6 +63,7 @@ function MonitizationClient.init(): ()
 	MonitizationClient.promptGui = New(scope, "ScreenGui")({
 		ResetOnSpawn = false,
 		IgnoreGuiInset = true,
+		ScreenInsets = Enum.ScreenInsets.None,
 		DisplayOrder = 4,
 		Name = "ProductPrompt",
 		[Children] = PromptMenu(scope, {
@@ -191,6 +193,12 @@ function MonitizationClient.init(): ()
 		end))
 		return function()
 			touchToProduct:Destroy()
+		end
+	end)
+	Observers.observeTag("PromptToProduct", function(instance)
+		local promptToProduct = PromptToProduct.new(instance, MonitizationClient.PromptPurchase)
+		return function()
+			promptToProduct:Destroy()
 		end
 	end)
 end

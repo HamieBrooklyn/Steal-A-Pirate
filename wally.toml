@@ -25,5 +25,7 @@ Trove = "sleitnick/trove@1.5.0"
 
 ViewportFitter = "legendoj1/viewportfitter@1.0.1"
 
+Zoneplus = "mattschrubb/zoneplus@3.2.0"
+
 [server-dependencies]
 ProfileStore = "lm-loleris/profilestore@1.0.3"

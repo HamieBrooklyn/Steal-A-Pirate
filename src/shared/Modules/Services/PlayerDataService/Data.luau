@@ -8,7 +8,7 @@ export type SavedTool = {
 }
 export type PlayerDataTemplate = {
 	Leaderstats: {
-		Cash: number,
+		Beli: number,
 		Rebirths: number,
 	},
 	UnlockedCharacters: { string },
@@ -29,7 +29,7 @@ local PlayerData = {}
 
 PlayerData.Template = {
 	Leaderstats = {
-		Cash = 0,
+		Beli = 0,
 		Rebirths = 0,
 	},
 	UnlockedCharacters = {},

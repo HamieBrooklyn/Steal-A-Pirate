@@ -12,6 +12,7 @@ local function init(
 	scope: Fusion.Scope<any>,
 	props: {
 		stepText: UsedAs<string>,
+		stepTextShown: UsedAs<boolean>,
 	}
 ): Fusion.Child
 	return scope:New("ScreenGui")({
@@ -21,6 +22,7 @@ local function init(
 
 		[Children] = StepText(scope, {
 			text = props.stepText,
+			shown = props.stepTextShown,
 		}),
 	})
 end

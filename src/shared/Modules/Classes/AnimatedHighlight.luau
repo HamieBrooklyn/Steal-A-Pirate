@@ -52,7 +52,7 @@ function AnimatedHighlight.new(
 	self.trove:Add(self.tempTrove)
 
 	local loopCon: RBXScriptConnection
-	self.trove:Add(self.scope:Observer(self.pulseLooping):onChange(function()
+	self.scope:Observer(self.pulseLooping):onChange(function()
 		if loopCon then
 			loopCon:Disconnect()
 			loopCon = nil
@@ -68,8 +68,8 @@ function AnimatedHighlight.new(
 				self:Pulse()
 			end
 		end))
-	end))
-	self.trove:Add(self.scope:Observer(self.enabled):onChange(function()
+	end)
+	self.scope:Observer(self.enabled):onChange(function()
 		self.tempTrove:Clean()
 		if not peek(self.enabled) then
 			return
@@ -94,7 +94,7 @@ function AnimatedHighlight.new(
 				self.enabled:set(false)
 			end
 		end))
-	end))
+	end)
 
 	return self
 end

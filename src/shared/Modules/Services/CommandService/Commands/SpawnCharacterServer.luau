@@ -14,7 +14,7 @@ return function(context, name: string, amount: number?, cooldown: number?)
 	end
 	task.spawn(function()
 		for i = 1, amount do
-			SpawningServer.spawners[SpawningServer.portalNamesById["MainPortals"]]:SpawnCharacter(name)
+			SpawningServer.spawners[SpawningServer.portalIdsByName["MainPortals"]]:SpawnCharacter(name)
 			task.wait(cooldown)
 		end
 	end)

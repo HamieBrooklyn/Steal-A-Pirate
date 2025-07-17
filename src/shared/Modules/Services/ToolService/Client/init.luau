@@ -21,6 +21,7 @@ local player = Players.LocalPlayer
 
 local ToolClient = {
 	sharedData = Data,
+	playerTools = {} :: { [Instance]: any },
 }
 ToolClient.BuyToolAttempt = Net:RemoteEvent("BuyToolAttempt")
 
@@ -46,15 +47,20 @@ function ToolClient.init()
 		local trove = Trove.new()
 
 		trove:Add(observeChildren(player.Backpack, function(child: Instance)
-			local toolClass = toolClasses[child.Name]
-			if not child:IsA("Tool") or not toolClass then
+			local funcName = child:GetAttribute("Functionality")
+			local toolClass = toolClasses[child.Name] or (funcName and toolClasses[funcName])
+			if not child:IsA("Tool") or not toolClass or ToolClient.playerTools[child] then
 				return
 			end
 
-			local tool = toolClass.new(child)
+			local tool = toolClass.new(player, child)
+			ToolClient.playerTools[child] = tool
 
 			return function()
 				tool:Destroy()
+				if ToolClient.playerTools then
+					ToolClient.playerTools[child] = nil
+				end
 			end
 		end))
 

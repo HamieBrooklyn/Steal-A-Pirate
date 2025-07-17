@@ -15,7 +15,7 @@ local SpawningServer = {
 }
 
 function SpawningServer.init()
-	SpawningServer.portalNamesById = {} :: { [string]: string }
+	SpawningServer.portalIdsByName = {} :: { [string]: string }
 
 	for i: string, v: SharedTypes.CharacterData in SharedData.Characters.Info do
 		if not SpawningServer.characterNamesByRarity[v.Rarity] then
@@ -68,13 +68,13 @@ function SpawningServer.init()
 			return
 		end
 		local spawner = Spawner.new(instance, data)
-		SpawningServer.portalNamesById[instance.Name] = spawner.id
+		SpawningServer.portalIdsByName[instance.Name] = spawner.id
 		SpawningServer.spawners[spawner.id] = spawner
 		return function()
 			if SpawningServer.spawners[spawner.id] then
 				SpawningServer.spawners[spawner.id] = nil
 			end
-			SpawningServer.portalNamesById[instance.Name] = nil
+			SpawningServer.portalIdsByName[instance.Name] = nil
 			spawner:Destroy()
 		end
 	end)

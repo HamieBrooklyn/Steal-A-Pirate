@@ -38,7 +38,7 @@ local function ToolFrame(
 	local toolData = SharedData.ShopTools[props.toolName]
 	local canBuy = scope:Computed(function(use)
 		return use(PlayerDataClient.leaderstats.Rebirths) >= toolData.RebirthsRequired
-			and use(PlayerDataClient.leaderstats.Cash) >= toolData.CashCost
+			and use(PlayerDataClient.leaderstats.Beli) >= toolData.BeliCost
 			and not use(props.limitReached)
 	end)
 
@@ -84,7 +84,7 @@ local function ToolFrame(
 	local moneyLabel = frame:WaitForChild("Money")
 	scope:Hydrate(moneyLabel)({
 		Text = scope:Computed(function(use)
-			return use(props.limitReached) and "MAX" or `${abbreviateNumber(toolData.CashCost)}`
+			return use(props.limitReached) and "MAX" or `${abbreviateNumber(toolData.BeliCost)}`
 		end),
 	})
 	local moneyLabelGradient = trove:Add(Gradiented.new(moneyLabel))

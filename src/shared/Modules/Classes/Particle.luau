@@ -10,6 +10,8 @@ type self = {
 	_trove: Trove.Trove,
 	_completedConnection: RBXScriptConnection,
 
+	part: Part?,
+
 	Emitters: { ParticleEmitter },
 }
 export type Particle = typeof(setmetatable({} :: self, Particle))
@@ -65,6 +67,7 @@ function Particle.new(
 	if part then
 		part.CFrame = cf
 		part.Parent = workspace.Terrain
+		self.part = part
 	end
 
 	return self

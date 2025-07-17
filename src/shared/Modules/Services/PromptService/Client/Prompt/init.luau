@@ -24,9 +24,7 @@ export type Prompt = typeof(setmetatable({} :: self, Prompt))
 function Prompt.new(instance: ProximityPrompt): Prompt
 	local self = setmetatable({}, Prompt) :: Prompt
 
-	local scope = scoped(Fusion, {
-		PromptBoard = PromptBoard,
-	})
+	local scope = scoped(Fusion)
 	self._scope = scope
 	self.trove = Trove.new()
 
@@ -96,7 +94,7 @@ function Prompt.new(instance: ProximityPrompt): Prompt
 		end,
 	})
 
-	self.PromptBoard = scope:PromptBoard({
+	self.PromptBoard = PromptBoard(scope, {
 		Shown = shown,
 		Adornee = instance.Parent,
 
@@ -105,6 +103,13 @@ function Prompt.new(instance: ProximityPrompt): Prompt
 
 		HoldDuration = holdDuration,
 		Holding = holding,
+
+		startHolding = function()
+			instance:InputHoldBegin()
+		end,
+		endHolding = function()
+			instance:InputHoldEnd()
+		end,
 	})
 
 	return self

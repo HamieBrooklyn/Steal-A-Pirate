@@ -46,44 +46,44 @@ SharedMonitizationData.Products = {
 		Amounts = { 10 },
 	},
 
-	["10KCash"] = {
+	["10KBeli"] = {
 		Id = 3333771747,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Leaderstat" },
 
-		StatNames = { "Cash" },
+		StatNames = { "Beli" },
 		Amounts = { 10_000 },
 	},
-	["100KCash"] = {
+	["100KBeli"] = {
 		Id = 3333771750,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Leaderstat" },
 
-		StatNames = { "Cash" },
+		StatNames = { "Beli" },
 		Amounts = { 100_000 },
 	},
-	["500KCash"] = {
+	["500KBeli"] = {
 		Id = 3333771748,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Leaderstat" },
 
-		StatNames = { "Cash" },
+		StatNames = { "Beli" },
 		Amounts = { 500_000 },
 	},
-	["2.5MCash"] = {
+	["2.5MBeli"] = {
 		Id = 3333771754,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Leaderstat" },
 
-		StatNames = { "Cash" },
+		StatNames = { "Beli" },
 		Amounts = { 2_500_000 },
 	},
-	["10MCash"] = {
+	["10MBeli"] = {
 		Id = 3333771753,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Leaderstat" },
 
-		StatNames = { "Cash" },
+		StatNames = { "Beli" },
 		Amounts = { 10_000_000 },
 	},
 
@@ -107,6 +107,14 @@ SharedMonitizationData.Products = {
 		Durations = { 30 * 60 }, -- 30 * 60
 	},
 
+	["LimitedCharacter"] = {
+		Id = 3336689904,
+		ProductType = "Product",
+		ServerFunctionTypes = { "Character" },
+
+		CharacterNames = { "Zuru" },
+	},
+
 	["2XServerLuck"] = {
 		Id = 3333776801,
 		ProductType = "Gamepass",
@@ -123,11 +131,11 @@ SharedMonitizationData.Products = {
 		ProductType = "Gamepass",
 		ServerFunctionTypes = { "Leaderstat", "Character" },
 
-		StatNames = { "Cash" },
+		StatNames = { "Beli" },
 		CharacterNames = { "Jimbay" },
 		Amounts = { 2500 },
 	},
-	["2XCash"] = {
+	["2XMoney"] = {
 		Id = 1317946130,
 		ProductType = "Gamepass",
 	},

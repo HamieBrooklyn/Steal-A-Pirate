@@ -12,7 +12,7 @@ local scoped = Fusion.scoped
 
 local PlayerDataClient = {
 	leaderstats = {} :: {
-		Cash: Fusion.Value<number, any>,
+		Beli: Fusion.Value<number, any>,
 		Rebirths: Fusion.Value<number, any>,
 	},
 }

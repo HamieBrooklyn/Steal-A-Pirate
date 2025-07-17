@@ -30,7 +30,7 @@ local ProfileStore = require(game.ServerScriptService.ProfileStore)
 
 -- The PROFILE_TEMPLATE table is what new profile "Profile.Data" will default to:
 local PROFILE_TEMPLATE = {
-   Cash = 0,
+   Beli = 0,
    Items = {},
 }
 
@@ -65,9 +65,9 @@ local function PlayerAdded(player)
          Profiles[player] = profile
          print(`Profile loaded for {player.DisplayName}!`)
          -- EXAMPLE: Grant the player 100 coins for joining:
-         profile.Data.Cash += 100
-         -- You should set "Cash" in PROFILE_TEMPLATE and use "Profile:Reconcile()",
-         -- otherwise you'll have to check whether "Data.Cash" is not nil
+         profile.Data.Beli += 100
+         -- You should set "Beli" in PROFILE_TEMPLATE and use "Profile:Reconcile()",
+         -- otherwise you'll have to check whether "Data.Beli" is not nil
       else
          -- The player has left before the profile session started
          profile:EndSession()

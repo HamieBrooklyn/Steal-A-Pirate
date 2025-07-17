@@ -80,7 +80,7 @@ function Base.new(model: Model): Base
 
 	local cashMultText = self._scope:Value("")
 	self._scope:Observer(RebirthClient.rebirths):onBind(function()
-		cashMultText:set(`x{math.max((SharedRebirthData.Constants.CashMultiplier * peek(RebirthClient.rebirths)), 1)}`)
+		cashMultText:set(`x{math.max((SharedRebirthData.Constants.BeliMultiplier * peek(RebirthClient.rebirths)), 1)}`)
 	end)
 
 	self._trove:Add(

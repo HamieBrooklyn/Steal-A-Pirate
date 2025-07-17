@@ -97,9 +97,6 @@ local function ToolShopMenu(
 		local openedState = peek(opened)
 		for _, v in shownVals do
 			v:set(openedState)
-			if openedState then
-				task.wait(0.1)
-			end
 		end
 	end)
 end

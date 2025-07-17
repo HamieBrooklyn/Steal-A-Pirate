@@ -39,6 +39,7 @@ type self = {
 
 	WasReset: Signal.Signal,
 	stolen: Signal.Signal,
+	collected: Signal.Signal,
 
 	Model: Model,
 
@@ -80,6 +81,7 @@ function Platform.new(
 
 	self.WasReset = Signal.new()
 	self.stolen = Signal.new()
+	self.collected = Signal.new()
 
 	self.Model = model
 	self.Owner = props.owner
@@ -146,7 +148,7 @@ function Platform.Heartbeat(self: Platform)
 		if
 			ownerUserId
 			and MonitizationServer.playerGamepasses[ownerUserId]
-			and MonitizationServer.playerGamepasses[ownerUserId]["2XCash"] == true
+			and MonitizationServer.playerGamepasses[ownerUserId]["2XMoney"] == true
 		then
 			mult += 2
 		end
@@ -179,9 +181,9 @@ function Platform.GivePlayerEarnings(self: Platform, generated: number)
 		return
 	end
 	local earnings = math.floor(
-		generated * math.max((SharedRebirthData.Constants.CashMultiplier * profile.Data.Leaderstats.Rebirths), 1)
+		generated * math.max((SharedRebirthData.Constants.BeliMultiplier * profile.Data.Leaderstats.Rebirths), 1)
 	)
-	PlayerDataServer.UpdateLeaderstat(player, "Cash", earnings)
+	PlayerDataServer.UpdateLeaderstat(player, "Beli", earnings)
 	PlayerDataServer.GetPlayerProfileData(player).TotalEarnings += earnings
 end
 
@@ -208,6 +210,7 @@ function Platform.Collect(self: Platform)
 	pcall(function()
 		self.Generated:set(0)
 	end)
+	self.collected:Fire()
 
 	self:Heartbeat()
 
@@ -264,7 +267,7 @@ function Platform.Sell(self: Platform)
 	end
 
 	local earnings = peek(self.CharacterData).Price
-	PlayerDataServer.UpdateLeaderstat(player, "Cash", earnings)
+	PlayerDataServer.UpdateLeaderstat(player, "Beli", earnings)
 	PlayerDataServer.GetPlayerProfileData(player).TotalEarnings += earnings
 
 	self:Collect()

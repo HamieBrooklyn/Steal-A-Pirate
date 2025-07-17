@@ -1,3 +1,4 @@
+local DataStoreService = game:GetService("DataStoreService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -111,12 +112,41 @@ function MonitizationServer.init()
 		end
 	end
 
-	MarketplaceService.ProcessReceipt = function(data: SharedTypes.RecieptInfo)
-		MonitizationServer.ProductPurchased(
-			Players:GetPlayerByUserId(data.PlayerId),
-			MonitizationServer.productKeysById[data.ProductId],
-			true
+	local purchaseHistoryStore = DataStoreService:GetDataStore("PurchaseHistory")
+	MarketplaceService.ProcessReceipt = function(receiptInfo: SharedTypes.RecieptInfo)
+		local success, result = pcall(
+			purchaseHistoryStore.UpdateAsync,
+			purchaseHistoryStore,
+			receiptInfo.PurchaseId,
+			function(isPurchased)
+				if isPurchased then
+					return true
+				end
+
+				local player = Players:GetPlayerByUserId(receiptInfo.PlayerId)
+				if not player then
+					return nil
+				end
+
+				MonitizationServer.ProductPurchased(
+					Players:GetPlayerByUserId(receiptInfo.PlayerId),
+					MonitizationServer.productKeysById[receiptInfo.ProductId],
+					isPurchased
+				)
+
+				return true
+			end
 		)
+
+		if not success then
+			local errorMessage = result
+			warn(`Failed to process receipt due to data store error: {errorMessage}`)
+			return Enum.ProductPurchaseDecision.NotProcessedYet
+		end
+		local didGrantPurchase = result == true
+		return if didGrantPurchase
+			then Enum.ProductPurchaseDecision.PurchaseGranted
+			else Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, gamePassId, wasPurchased)

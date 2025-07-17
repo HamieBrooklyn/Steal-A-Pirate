@@ -12,7 +12,7 @@ local formatTime = require(ReplicatedStorage.Shared.Modules.Utilities.formatTime
 local function ServerLuckBoost(player: Player, wasPurchased: boolean, data: SharedTypes.ProductInfo, index: number)
 	if wasPurchased then
 		for i, v in data.Portals do
-			SpawningServer.spawners[SpawningServer.portalNamesById[v]]:ActivateLuckBoost(
+			SpawningServer.spawners[SpawningServer.portalIdsByName[v]]:ActivateLuckBoost(
 				data.Amounts[i],
 				data.Durations[i]
 			)

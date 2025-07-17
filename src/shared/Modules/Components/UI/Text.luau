@@ -18,6 +18,8 @@ local function Label(
 		fontFace: UsedAs<Font?>,
 		textXAlignment: UsedAs<Enum.TextXAlignment?>,
 
+		transparency: UsedAs<number>?,
+
 		layoutOrder: UsedAs<number?>,
 	}
 )
@@ -36,12 +38,13 @@ local function Label(
 				or Font.new("rbxasset://fonts/families/PressStart2P.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 		end),
 		TextXAlignment = props.textXAlignment,
+		TextTransparency = props.transparency,
 
 		BackgroundTransparency = 1,
 
 		LayoutOrder = props.layoutOrder,
 
-		[Children] = New(scope, "UIStroke")({ Thickness = 2 }),
+		[Children] = New(scope, "UIStroke")({ Thickness = 2, Transparency = props.transparency }),
 	})
 end
 

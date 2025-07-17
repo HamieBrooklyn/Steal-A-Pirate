@@ -31,7 +31,7 @@ function RebirthClient.init()
 			end)
 
 			menu.rootSeed:set(tonumber(seed))
-			menu.CashVal:set(player:WaitForChild("leaderstats"):WaitForChild("Cash"))
+			menu.BeliVal:set(player:WaitForChild("leaderstats"):WaitForChild("Beli"))
 		end
 	end
 	Net:Connect("RebirthDataLoaded", loadMenuData)

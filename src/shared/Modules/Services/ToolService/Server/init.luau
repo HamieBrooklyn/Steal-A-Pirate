@@ -6,14 +6,18 @@ local Services = Modules.Services
 local Tools = script.Tools
 
 local PlayerDataServer = require(Services.PlayerDataService.Server)
+local BaseServer = require(Services.BaseService.Server)
 
 local SharedData = require(script.Parent.Data)
 
-local Observers = require(ReplicatedStorage.Packages.Observers)
-local Trove = require(ReplicatedStorage.Packages.Trove)
-
 local observeChildren = require(Modules.Utilities.observeChildren)
+
+local Observers = require(ReplicatedStorage.Packages.Observers)
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Trove = require(ReplicatedStorage.Packages.Trove)
 local Net = require(ReplicatedStorage.Packages.Net)
+
+local peek = Fusion.peek
 
 local ToolServer = {
 	sharedData = SharedData,
@@ -97,6 +101,19 @@ function ToolServer.RemoveToolFromPlayer(player: Player, toolName: string, amoun
 	end
 end
 
+function ToolServer.PlayerOwnsTool(player: Player, toolName: string): (boolean, number)
+	local count = 0
+	local found = false
+	print(ToolServer.playerTools[player.UserId])
+	for i, _ in ToolServer.playerTools[player.UserId] do
+		if i.Name == toolName then
+			count += 1
+			found = true
+		end
+	end
+	return found, count
+end
+
 function ToolServer.init()
 	local toolClasses = {}
 	for _, v in Tools:GetChildren() do
@@ -119,12 +136,14 @@ function ToolServer.init()
 
 		trove:Add(observeChildren(player.Backpack, function(child: Instance)
 			local funcName = child:GetAttribute("Functionality")
-			local toolClass = toolClasses[child.Name] or (funcName and toolClasses[funcName])
+			local toolClass = (funcName and toolClasses[funcName]) or toolClasses[child.Name]
 			if not child:IsA("Tool") or not toolClass or ToolServer.playerTools[player.UserId][child] then
 				return
 			end
 
-			local tool = toolClass.new(player, child)
+			local tool = toolClass.new(player, child, function()
+				ToolServer.RemoveToolFromPlayer(player, child.Name, 1)
+			end)
 			ToolServer.playerTools[player.UserId][child] = tool
 
 			return function()
@@ -168,10 +187,10 @@ function ToolServer.init()
 			player.Name .. " did not have enough rebirths to buy sent tool"
 		)
 		assert(
-			profileData.Leaderstats.Cash >= toolData.CashCost,
+			profileData.Leaderstats.Beli >= toolData.BeliCost,
 			player.Name .. " did not have enough cash to buy " .. tool.Name
 		)
-		PlayerDataServer.UpdateLeaderstat(player, "Cash", -toolData.CashCost)
+		PlayerDataServer.UpdateLeaderstat(player, "Beli", -toolData.BeliCost)
 
 		assert(
 			not profileData.Tools[toolName] or profileData.Tools[toolName].Amount < toolData.Limit,
@@ -213,6 +232,30 @@ function ToolServer.init()
 		if result and result.Position and (result.Position - position).Magnitude < 1 then
 			ToolServer.RemoveToolFromPlayer(player, tool.Name, 1)
 			ToolServer.floorItemClasses[tool.Name].new(player, result.Position)
+		end
+	end)
+	Net:Handle("UseFruitAttempt", function(player, fruitType: string, data: { any })
+		assert(fruitType and typeof(fruitType) == "string", "Sent fruit type was not of type string")
+		assert(data and typeof(data) == "table", "Sent fruit data was not of type table")
+
+		if fruitType == "Unlock" then
+			local baseId = data.baseId
+			assert(baseId and typeof(baseId) == "string", "Sent base id was not of type string")
+
+			local base = BaseServer.GetPlayerBase(player)
+			if not base then
+				return false
+			end
+			if not peek(base.locked) then
+				return false
+			end
+
+			assert(ToolServer.PlayerOwnsTool(player, "Unlock Unlock Fruit"), `{player.Name} did not own a unlock fruit`)
+			ToolServer.RemoveToolFromPlayer(player, "Unlock Unlock Fruit", 1)
+
+			base:SetLocked(false)
+
+			return true
 		end
 	end)
 end

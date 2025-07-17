@@ -26,6 +26,7 @@ local BaseClient = {
 BaseClient.characterAddedToBase = Signal.new()
 BaseClient.characterRemovedFromBase = Signal.new()
 BaseClient.baseLoaded = Signal.new()
+BaseClient.baseReset = Signal.new()
 
 function BaseClient.GetBase()
 	return Promise.new(function(resolve)
@@ -98,6 +99,7 @@ function BaseClient.init()
 				end
 			end
 			base:Reset()
+			BaseClient.baseReset:Fire(base)
 		else
 			table.insert(basesResetQueue, baseId)
 		end

@@ -1,15 +1,15 @@
 local SharedRebirthData = {}
 
 SharedRebirthData.Constants = {
-	CashMultiplier = 1.25,
-	StartingCash = 1000,
+	BeliMultiplier = 1.25,
+	StartingBeli = 1000,
 	LockTimerIncrement = 10,
 	OverCost = 10_000_000,
 }
 
 SharedRebirthData.Levels = {
 	{
-		CashRequired = 100_000,
+		BeliRequired = 100_000,
 		Characters = {
 			"Uncommon",
 			"Uncommon",
@@ -17,14 +17,14 @@ SharedRebirthData.Levels = {
 		},
 	},
 	{
-		CashRequired = 200_000,
+		BeliRequired = 200_000,
 		Characters = {
 			"Rare",
 			"Rare",
 		},
 	},
 	{
-		CashRequired = 350_000,
+		BeliRequired = 350_000,
 		Characters = {
 			"Rare",
 			"Rare",
@@ -32,14 +32,14 @@ SharedRebirthData.Levels = {
 		},
 	},
 	{
-		CashRequired = 500_000,
+		BeliRequired = 500_000,
 		Characters = {
 			"Epic",
 			"Epic",
 		},
 	},
 	{
-		CashRequired = 600_000,
+		BeliRequired = 600_000,
 		Characters = {
 			"Epic",
 			"Epic",
@@ -47,14 +47,14 @@ SharedRebirthData.Levels = {
 		},
 	},
 	{
-		CashRequired = 700_000,
+		BeliRequired = 700_000,
 		Characters = {
 			"Legendary",
 			"Legendary",
 		},
 	},
 	{
-		CashRequired = 900_000,
+		BeliRequired = 900_000,
 		Characters = {
 			"Legendary",
 			"Legendary",
@@ -62,7 +62,7 @@ SharedRebirthData.Levels = {
 		},
 	},
 	{
-		CashRequired = 1_000_000,
+		BeliRequired = 1_000_000,
 		Characters = {
 			"Mythical",
 			"Mythical",

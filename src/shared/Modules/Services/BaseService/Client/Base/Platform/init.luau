@@ -1,7 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local CashParticle = ReplicatedStorage.Assets.VFX.Particles.CashParticles
+local BeliParticle = ReplicatedStorage.Assets.VFX.Particles.CashParticles
 local InteractPromptTemp = ReplicatedStorage.Assets.Templates.PirateInteract
 
 local SpawningServiceFold = ReplicatedStorage.Shared.Modules.Services.SpawningService
@@ -172,7 +172,7 @@ function Platform.new(model: Model, owner: Fusion.Value<string?, any>, baseModel
 	local touchTrove = Trove.new()
 	trove:Add(touchTrove)
 
-	self.Emitter = Particle.new(CashParticle, model:WaitForChild("Collect"))
+	self.Emitter = Particle.new(BeliParticle, model:WaitForChild("Collect"))
 	trove:Add(self.Emitter)
 
 	self.animatedHighlight = AnimatedHighlight.new({
@@ -244,7 +244,7 @@ function Platform.Collect(self: Platform)
 	end
 
 	if peek(self.LocalPlayerIsOwner) and collectPart then
-		local CashLabel: TextLabel? = player
+		local cashLabel: TextLabel? = player
 			:WaitForChild("PlayerGui")
 			:WaitForChild("Main")
 			:WaitForChild("HUD")
@@ -264,10 +264,10 @@ function Platform.Collect(self: Platform)
 			WorldPart = collectPart,
 			TargetPosition = UDim2.fromScale(0, 1),
 		}, function()
-			local animObj = GuiAnimationClient.animatedObjects[CashLabel]
+			local animObj = GuiAnimationClient.animatedObjects[cashLabel]
 			animObj.PositionSpring:addVelocity(UDim2.fromScale(0, -5))
 			animObj.RotationSpring:addVelocity(math.random(-120, 120))
-			animObj.SizeSpring:addVelocity(UDim2.fromScale(0.1, 0.1))
+			animObj.AnimatedSize:addVelocity(UDim2.fromScale(0.1, 0.1))
 		end, function()
 			spawner:Destroy()
 		end)
@@ -291,7 +291,7 @@ function Platform.Heartbeat(self: Platform)
 		if
 			ownerUserId
 			and MonitizationClient.playerGamepasses[ownerUserId]
-			and peek(MonitizationClient.playerGamepasses[ownerUserId]["2XCash"]) == true
+			and peek(MonitizationClient.playerGamepasses[ownerUserId]["2XMoney"]) == true
 		then
 			mult += 2
 		end
