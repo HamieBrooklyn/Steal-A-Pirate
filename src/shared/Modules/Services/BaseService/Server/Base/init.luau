@@ -468,6 +468,9 @@ function Base.AddCharacter(
 
 			v.Mutations:set(mutations)
 			v.CharacterName:set(characterName)
+			if not characterData then
+				warn(`{characterName}'s data was not found`)
+			end
 			v.CharacterData:set(characterData)
 
 			v:LoadGenerated()

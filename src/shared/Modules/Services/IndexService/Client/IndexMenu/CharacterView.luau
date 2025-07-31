@@ -70,6 +70,9 @@ local function CharacterView(
 	unknownGradient.Enabled = props.isUnknownRarity
 	unknownGradient:FindFirstChildOfClass("LocalScript").Enabled = props.isUnknownRarity
 
+	if not peek(props.viewportModel) then
+		warn(`{props.characterName} was not found as a model`)
+	end
 	local model: Model = peek(props.viewportModel):Clone()
 	model:PivotTo(CFrame.new())
 

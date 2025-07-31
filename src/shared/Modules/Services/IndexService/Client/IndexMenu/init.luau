@@ -66,6 +66,9 @@ local function IndexMenu(
 					scope,
 					props.unlockedCharacterNames,
 					function(_, indexScope: Fusion.Scope<any>, characterName: string, unlocked: boolean)
+						if not SharedSpawningData.Characters.Info[characterName] then
+							warn(`{characterName}'s data was not found`)
+						end
 						local rarity = SharedSpawningData.Characters.Info[characterName].Rarity
 						return characterName,
 							CharacterView(indexScope, {
