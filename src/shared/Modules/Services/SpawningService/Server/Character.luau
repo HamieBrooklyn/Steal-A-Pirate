@@ -145,8 +145,10 @@ function Character.new(
 		end
 	end))
 	self.Humanoid.Running:Connect(function(speed)
-		for _, v in self.Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks() do
-			v:AdjustSpeed(speed / 10)
+		if not RunService:IsStudio() then
+			for _, v in self.Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks() do
+				v:AdjustSpeed(speed / 10)
+			end
 		end
 	end)
 	self.Humanoid.WalkSpeed = SharedData.WalkSpeed
