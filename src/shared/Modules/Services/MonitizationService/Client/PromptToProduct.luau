@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Services = ReplicatedStorage.Shared.Modules.Services
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Observers = require(ReplicatedStorage.Packages.Observers)
 
 local scoped, peek = Fusion.scoped, Fusion.peek
 
@@ -33,14 +34,15 @@ function PromptToProduct.new(attachment: Attachment, promptPurchase: (id: number
 	prompt:AddTag("CustomPrompt")
 	self.prompt = prompt
 
-	if attachment:GetAttribute("CheckFullBase") then
-		BaseClient.GetBase():andThen(function(base: Base.Base)
-			self._scope:Observer(base.isFull):onBind(function()
-				print(peek(base.isFull))
-				prompt.Enabled = not peek(base.isFull)
+	Observers.observeAttribute(attachment, "CheckFullBase", function(value)
+		if value then
+			BaseClient.GetBase():andThen(function(base: Base.Base)
+				self._scope:Observer(base.isFull):onBind(function()
+					prompt.Enabled = not peek(base.isFull)
+				end)
 			end)
-		end)
-	end
+		end
+	end)
 
 	prompt.Triggered:Connect(function()
 		promptPurchase(tonumber(attachment:GetAttribute("Id")))

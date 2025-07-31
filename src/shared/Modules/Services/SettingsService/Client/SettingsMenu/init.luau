@@ -23,7 +23,7 @@ local function SettingsMenu(
 	local mainFrame = New(scope, "Frame")({
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromScale(0.45, 0.55),
+		Size = UDim2.fromScale(0.62, 0.62),
 
 		BackgroundTransparency = 0.75,
 		BackgroundColor3 = Color3.new(0, 0, 0),
@@ -42,12 +42,13 @@ local function SettingsMenu(
 			}),
 			New(scope, "UIStroke")({}),
 			New(scope, "UICorner")({ CornerRadius = UDim.new(0.1, 0) }),
+			scope:New("UIAspectRatioConstraint")({}),
 			TopBar(scope, { mainFrame = mainFrameTarget }),
 			ForPairs(
 				scope,
 				props.settingsData,
 				function(_, settingScope: Fusion.Scope<any>, index: string, data: SharedTypes.SettingData)
-					return Setting(scope, index, {
+					return Setting(settingScope, index, {
 						settingData = data,
 						value = props.playerSettings[index],
 

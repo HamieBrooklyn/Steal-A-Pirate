@@ -27,6 +27,7 @@ BaseClient.characterAddedToBase = Signal.new()
 BaseClient.characterRemovedFromBase = Signal.new()
 BaseClient.baseLoaded = Signal.new()
 BaseClient.baseReset = Signal.new()
+BaseClient.platformsReset = Signal.new()
 
 function BaseClient.GetBase()
 	return Promise.new(function(resolve)
@@ -56,6 +57,7 @@ function BaseClient.init()
 
 	local function loadPlatform(platform: Platform.Platform, data)
 		platform.LastCollected:set(data.lastCollectedTime)
+		platform.Mutations(data.mutations or {})
 		platform.CharacterName:set(data.characterName)
 		platform:LoadGenerated()
 
@@ -76,6 +78,7 @@ function BaseClient.init()
 				loadPlatform(base.Platforms[v.platformId], {
 					lastCollectedTime = v.lastCollectedTime,
 					characterName = v.characterName,
+					mutations = v.mutations,
 				})
 			end
 			BaseClient.baseLoaded:Fire(base)
@@ -92,21 +95,22 @@ function BaseClient.init()
 	local function resetBase(baseId: string)
 		local base = BaseClient.bases[baseId]
 		if base then
+			base:Reset()
+			BaseClient.baseReset:Fire(base)
+
 			for _, v in base.Platforms do
 				local charName = peek(v.CharacterName)
 				if charName then
 					BaseClient.characterRemovedFromBase:Fire(base, charName, v)
 				end
 			end
-			base:Reset()
-			BaseClient.baseReset:Fire(base)
 		else
 			table.insert(basesResetQueue, baseId)
 		end
 	end
 	Net:Connect("BaseReset", resetBase)
 
-	Net:Connect("PlatformsReset", function(platformsReset: SharedTypes.PlatformIdData)
+	Net:Connect("PlatformsReset", function(platformsReset: { SharedTypes.PlatformIdData })
 		for _, v in platformsReset do
 			local base = BaseClient.bases[v.baseId]
 			if base then
@@ -116,6 +120,7 @@ function BaseClient.init()
 				end
 			end
 		end
+		BaseClient.platformsReset:Fire()
 	end)
 
 	local function setBaseLocked(baseId: string, isLocked: boolean, lastLockedTime: string, lockDuration: number)
@@ -142,12 +147,12 @@ function BaseClient.init()
 		if base then
 			local platform = base.Platforms[platformId]
 
+			platform:Stolen(playerStealing)
+
 			local charName = peek(platform.CharacterName)
 			if charName then
 				BaseClient.characterRemovedFromBase:Fire(base, charName, platform)
 			end
-
-			platform:Stolen(playerStealing)
 		else
 			table.insert(charactersStolenQueue, {
 				baseId = baseId,
@@ -162,6 +167,7 @@ function BaseClient.init()
 		{
 			baseId: string,
 			platformId: string,
+			mutations: { string }?,
 		}
 	})
 		for _, v in platforms do
@@ -179,9 +185,24 @@ function BaseClient.init()
 		local base = BaseClient.bases[baseId]
 		local platform = base.Platforms[platformId]
 
-		BaseClient.characterRemovedFromBase:Fire(base, peek(platform.CharacterName), platform)
-
 		platform:Sold()
+
+		BaseClient.characterRemovedFromBase:Fire(base, peek(platform.CharacterName), platform)
+	end)
+
+	Net:Connect("PlayerIsStealing", function(isStealing: boolean, playerStealing: Player)
+		BaseClient:GetBase():andThen(function(base: Base.Base)
+			local playersStealingState = table.clone(peek(base.playersStealing))
+			if isStealing then
+				table.insert(playersStealingState, playerStealing)
+			else
+				local i = table.find(playersStealingState, playerStealing)
+				if i then
+					table.remove(playersStealingState, i)
+				end
+			end
+			base.playersStealing:set(playersStealingState)
+		end)
 	end)
 
 	local function setBaseFull(baseId: string, full: boolean)

@@ -1,8 +1,14 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local StarterPlayer = game:GetService("StarterPlayer")
 
-local Trove = require(ReplicatedStorage.Packages.Trove)
 local AnimatedHighlight = require(ReplicatedStorage.Shared.Modules.Classes.AnimatedHighlight)
-local Sound = require(ReplicatedStorage.Shared.Modules.Classes.Sound)
+local TimerBoard = require(ReplicatedStorage.Shared.Modules.Components.UI.TimerBoard)
+
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Trove = require(ReplicatedStorage.Packages.Trove)
+
+local peek = Fusion.peek
 
 local SomeFruit = {}
 SomeFruit.__index = SomeFruit
@@ -42,17 +48,16 @@ function SomeFruit.Activated(self: SomeFruit, used: () -> ()): ()
 
 	local animatedHighlight: AnimatedHighlight.AnimatedHighlight = self._trove:Add(AnimatedHighlight.new({
 		FillColor = Color3.fromRGB(252, 255, 65),
-		OutlineColor = Color3.fromRGB(70, 79, 255),
+		OutlineColor = Color3.fromRGB(255, 175, 70),
 	}, char))
 	animatedHighlight:Pulse()
 
-	local startWalkSpeed = hum.WalkSpeed
-	hum.WalkSpeed += 15
+	hum.WalkSpeed = StarterPlayer.CharacterWalkSpeed + 15
 	used()
 
 	task.delay(15, function()
 		if hum then
-			hum.WalkSpeed = startWalkSpeed
+			hum.WalkSpeed = StarterPlayer.CharacterWalkSpeed
 		end
 	end)
 end

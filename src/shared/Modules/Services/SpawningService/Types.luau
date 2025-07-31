@@ -24,4 +24,14 @@ export type CharacterData = {
 	Rarity: string,
 }
 
+export type MutationData = {
+	Class: string,
+	Mult: number,
+
+	Title: string,
+	Gradient: UIGradient,
+
+	Values: { [string]: any },
+}
+
 return SpawningTypes

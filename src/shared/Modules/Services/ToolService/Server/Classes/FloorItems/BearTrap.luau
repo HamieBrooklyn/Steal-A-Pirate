@@ -7,6 +7,8 @@ local BearTrapSounds = ReplicatedStorage.Assets.Sounds.SoundEffects.BearTrap
 local Toucher = require(ReplicatedStorage.Shared.Modules.Classes.Toucher)
 local Sound = require(ReplicatedStorage.Shared.Modules.Classes.Sound)
 
+local SharedData = require(script.Parent.Parent.Parent.Parent.Data)
+
 local Trove = require(ReplicatedStorage.Packages.Trove)
 
 local BearTrap = {}
@@ -19,7 +21,7 @@ type self = {
 }
 export type BearTrap = typeof(setmetatable({} :: self, BearTrap))
 
-function BearTrap.new(placer: Player, position: Vector3): BearTrap
+function BearTrap.new(placer: Player, position: Vector3, removed: () -> ()): BearTrap
 	local self = setmetatable({}, BearTrap) :: BearTrap
 
 	self.trove = Trove.new()
@@ -29,6 +31,11 @@ function BearTrap.new(placer: Player, position: Vector3): BearTrap
 	self.model.Parent = workspace.Terrain
 
 	Sound.new(BearTrapSounds.Lay, self.model.PrimaryPart):Play()
+
+	self.trove:Add(removed)
+	task.delay(SharedData.FloorItemsRemoveDuration, function()
+		self:Destroy()
+	end)
 
 	self.toucher = self.trove:Add(Toucher.new(self.model))
 	self.toucher.PlayerTouched:Connect(function(player: Player)
@@ -51,6 +58,7 @@ function BearTrap.new(placer: Player, position: Vector3): BearTrap
 						root.Anchored = false
 					end
 					self:Destroy()
+					removed()
 				end)
 			end
 		end

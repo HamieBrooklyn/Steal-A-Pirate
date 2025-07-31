@@ -15,6 +15,7 @@ local function Label(
 
 		text: UsedAs<string>,
 		textColor: UsedAs<Color3?>,
+		richText: UsedAs<boolean?>,
 		fontFace: UsedAs<Font?>,
 		textXAlignment: UsedAs<Enum.TextXAlignment?>,
 
@@ -32,7 +33,11 @@ local function Label(
 		TextColor3 = Computed(scope, function(use)
 			return use(props.textColor) or Color3.new(1, 1, 1)
 		end),
-		TextScaled = true,
+		TextScaled = scope:Computed(function(use)
+			return not use(props.richText)
+		end),
+		RichText = props.richText,
+		TextWrapped = props.richText,
 		FontFace = Computed(scope, function(use)
 			return use(props.font)
 				or Font.new("rbxasset://fonts/families/PressStart2P.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)

@@ -2,6 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Services = ReplicatedStorage.Shared.Modules.Services
 
+local SharedSpawningData = require(Services.SpawningService.Data)
 local SharedData = require(script.Parent.Data)
 
 local PlayerDataServer = require(Services.PlayerDataService.Server)
@@ -54,9 +55,14 @@ function RebirthServer.init()
 
 		local rnd = Random.new(rebirthSeed)
 
+		local function obtainable(charName: string)
+			return SharedSpawningData.Characters.Info[charName].Natural == true
+				or SharedSpawningData.Characters.Info[charName].Natural == nil
+		end
+
 		local rebirthLevelData = SharedData.Levels[rebirths + 1]
 		if rebirthLevelData then
-			assert(profile.Data.Leaderstats.Beli >= rebirthLevelData.BeliRequired, "Player didnt have enough Beli")
+			assert(profile.Data.Leaderstats.Cash >= rebirthLevelData.CashRequired, "Player didnt have enough Cash")
 
 			local charactersLeft = {}
 			for _, v in rebirthLevelData.Characters do
@@ -67,7 +73,7 @@ function RebirthServer.init()
 				repeat
 					charName = charactersWithRarity[rnd:NextInteger(1, #charactersWithRarity)]
 					tries += 1
-				until table.find(charactersLeft, charName) == nil or tries > 100
+				until obtainable(charName) and (table.find(charactersLeft, charName) == nil or tries > 100)
 
 				table.insert(charactersLeft, charName)
 			end
@@ -83,9 +89,17 @@ function RebirthServer.init()
 		base:ResetAllPlatforms(true)
 
 		PlayerDataServer.UpdateLeaderstat(player, "Rebirths", 1)
-		local earnings = SharedData.Constants.StartingBeli * profile.Data.Leaderstats.Rebirths
-		PlayerDataServer.SetLeaderstat(player, "Beli", earnings)
+		local earnings = SharedData.Constants.StartingCash * profile.Data.Leaderstats.Rebirths
+		PlayerDataServer.SetLeaderstat(player, "Cash", earnings)
 		PlayerDataServer.GetPlayerProfileData(player).TotalEarnings += earnings
+
+		for _, spawner in SpawningServer.spawners do
+			for _, v in spawner.SpawnedCharacters do
+				if peek(v.Player) == player then
+					v.Player:set(nil)
+				end
+			end
+		end
 
 		return true
 	end)

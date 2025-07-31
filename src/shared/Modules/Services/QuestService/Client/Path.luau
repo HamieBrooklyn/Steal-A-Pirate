@@ -31,9 +31,9 @@ function Path.new(from: BasePart, to: BasePart): Path
 
 	for i = 0, 1 do
 		local newAttach = Instance.new("Attachment")
-		newAttach.Parent = if i == 0 then from else to
-		newAttach.Name = "Pathfind_" .. if i == 0 then "From" else "To"
-		subscribe(self[if i == 0 then "fromAtom" else "toAtom"], function(state)
+		newAttach.Parent = if i == 0 then to else from
+		newAttach.Name = "Pathfind_" .. if i == 0 then "To" else "From"
+		subscribe(self[if i == 0 then "toAtom" else "fromAtom"], function(state)
 			newAttach.Parent = state
 		end)
 		self[`attachment{i}`] = self._trove:Add(newAttach)

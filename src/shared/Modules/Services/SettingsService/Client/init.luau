@@ -40,7 +40,8 @@ function SettingsClient.init()
 		end
 	end
 	Net:Connect("PlayersSettingsWasSet", updateSettings)
-	Net:Connect("ProfileLoaded", function()
+
+	local function check()
 		updateSettings(SettingsClient.getPlayersSettings:InvokeServer())
 
 		SettingsClient.screenGui = New(scope, "ScreenGui")({
@@ -65,7 +66,11 @@ function SettingsClient.init()
 			}),
 		}) :: ScreenGui
 		SettingsClient.screenGui:AddTag("Menu")
-	end)
+	end
+	if Players.LocalPlayer:GetAttribute("ProfileLoaded") then
+		check()
+	end
+	Net:Connect("ProfileLoaded", check)
 end
 
 return SettingsClient

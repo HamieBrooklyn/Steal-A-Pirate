@@ -14,6 +14,7 @@ local Promise = require(ReplicatedStorage.Packages.Promise)
 local Net = require(ReplicatedStorage.Packages.Net)
 local Observers = require(ReplicatedStorage.Packages.Observers)
 local FloatingItem = require(script.FloatingItem)
+local LikeGoalCounter = require(script.LikeGoalCounter)
 
 export type SharedTypes = typeof(SharedTypes)
 export type FunctionType = typeof(SomeProductType)
@@ -24,6 +25,7 @@ local MonitizationServer = {
 }
 MonitizationServer.gamepassesLoaded = Net:RemoteEvent("GamepassesLoaded")
 MonitizationServer.playerPurchasedGamepass = Net:RemoteEvent("PlayerPurchasedGamepass")
+MonitizationServer.playerGamepassesLoaded = Signal.new()
 
 MonitizationServer.productPurchased = Signal.new()
 MonitizationServer.ownedGamepassLoaded = Signal.new()
@@ -87,6 +89,8 @@ function MonitizationServer.init()
 			end
 		end
 		if player.Parent then
+			player:SetAttribute("GamepassesLoaded", true)
+			MonitizationServer.playerGamepassesLoaded:Fire(player)
 			MonitizationServer.gamepassesLoaded:FireAllClients(
 				tostring(player.UserId),
 				MonitizationServer.playerGamepasses[player.UserId]
@@ -131,7 +135,7 @@ function MonitizationServer.init()
 				MonitizationServer.ProductPurchased(
 					Players:GetPlayerByUserId(receiptInfo.PlayerId),
 					MonitizationServer.productKeysById[receiptInfo.ProductId],
-					isPurchased
+					true
 				)
 
 				return true
@@ -157,6 +161,12 @@ function MonitizationServer.init()
 		local floatingItem = FloatingItem.new(instance)
 		return function()
 			floatingItem:Destroy()
+		end
+	end)
+	Observers.observeTag("LikeGoalCounter", function(instance)
+		local likeGoalCounter = LikeGoalCounter.new(instance)
+		return function()
+			likeGoalCounter:Destroy()
 		end
 	end)
 end

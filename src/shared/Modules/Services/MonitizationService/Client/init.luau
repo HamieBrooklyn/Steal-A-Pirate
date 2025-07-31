@@ -1,6 +1,7 @@
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local SoundEffects = ReplicatedStorage.Assets.Sounds.SoundEffects
 
@@ -12,13 +13,15 @@ local Sound = require(ReplicatedStorage.Shared.Modules.Classes.Sound)
 
 local SharedData = require(script.Parent.Data)
 
-local Promise = require(ReplicatedStorage.Packages.Promise)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Packages.Net)
 local Observers = require(ReplicatedStorage.Packages.Observers)
 local TouchToProduct = require(script.TouchToProduct)
 local PromptToProduct = require(script.PromptToProduct)
+local createTaggedComponent = require(ReplicatedStorage.Shared.Modules.Utilities.createTaggedComponent)
+local CountdownUntilDate = require(script.CountdownUntilDate)
+local Confetti = require(ReplicatedStorage.Shared.Modules.Classes.Confetti)
 
 local Value, New, Children = Fusion.Value, Fusion.New, Fusion.Children
 local scoped, peek = Fusion.scoped, Fusion.peek
@@ -33,6 +36,8 @@ MonitizationClient.playerGamepassesLoaded = Signal.new()
 MonitizationClient.playerPurchasedGamepass = Signal.new()
 MonitizationClient.productPurchased = Signal.new()
 
+MonitizationClient.isInPrompt = false
+
 function MonitizationClient.SetPrompting(id: number): boolean
 	if peek(MonitizationClient.promptingId) == -1 then
 		MonitizationClient.promptingId:set(id)
@@ -43,15 +48,20 @@ function MonitizationClient.SetPrompting(id: number): boolean
 end
 
 function MonitizationClient.PromptPurchase(id: number): ()
+	if MonitizationClient.isInPrompt then
+		return
+	end
 	local key = MonitizationClient.productKeysById[id]
 	local data = SharedData.Products[key]
 	if
 		data.ProductType == "Gamepass"
 		and not peek(MonitizationClient.playerGamepasses[Players.LocalPlayer.UserId][key])
 	then
+		MonitizationClient.isInPrompt = true
 		MarketplaceService:PromptGamePassPurchase(Players.LocalPlayer, data.Id)
 		MonitizationClient.SetPrompting(id)
 	elseif data.ProductType == "Product" then
+		MonitizationClient.isInPrompt = true
 		MarketplaceService:PromptProductPurchase(Players.LocalPlayer, data.Id)
 		MonitizationClient.SetPrompting(id)
 	end
@@ -82,8 +92,11 @@ function MonitizationClient.init(): ()
 		functionTypes[v.Name] = require(v)
 	end
 
+	local confettiGun = Confetti.new()
+
 	local function handleSuccess()
 		Sound.new(PurchaseSound, workspace):Play()
+		confettiGun:Emit(100, UDim2.fromScale(0.5, 1))
 	end
 
 	MonitizationClient.playerGamepasses[Players.LocalPlayer.UserId] = {}
@@ -108,6 +121,7 @@ function MonitizationClient.init(): ()
 			MonitizationClient.productKeysById[productId],
 			isPurchased
 		)
+		MonitizationClient.isInPrompt = false
 	end)
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, productId, isPurchased)
 		MonitizationClient.promptingId:set(-1)
@@ -120,6 +134,7 @@ function MonitizationClient.init(): ()
 			MonitizationClient.playerPurchasedGamepass:Fire(player, productKey)
 		end
 		MonitizationClient.productPurchased:Fire(player, MonitizationClient.productKeysById[productId], isPurchased)
+		MonitizationClient.isInPrompt = false
 	end)
 	MarketplaceService.PromptPurchaseFinished:Connect(function(userId, productId, isPurchased)
 		MonitizationClient.promptingId:set(-1)
@@ -131,6 +146,7 @@ function MonitizationClient.init(): ()
 			MonitizationClient.productKeysById[productId],
 			isPurchased
 		)
+		MonitizationClient.isInPrompt = false
 	end)
 	MonitizationClient.productPurchased:Connect(function(player: Player, productKey: string, isPurchased: boolean)
 		local productData = SharedData.Products[productKey]
@@ -175,8 +191,7 @@ function MonitizationClient.init(): ()
 	end)
 
 	Observers.observeTag("TouchToProduct", function(instance)
-		local touchToProduct = TouchToProduct.new(instance)
-		touchToProduct._trove:Add(touchToProduct.toucher.PlayerTouched:Connect(function(player: Player)
+		local touchToProduct = TouchToProduct.new(instance, function(player: Player)
 			local productId = instance:GetAttribute("Id")
 			local productKey = MonitizationClient.productKeysById[productId]
 
@@ -190,7 +205,7 @@ function MonitizationClient.init(): ()
 			then
 				MonitizationClient.PromptPurchase(tonumber(productId))
 			end
-		end))
+		end)
 		return function()
 			touchToProduct:Destroy()
 		end
@@ -199,6 +214,13 @@ function MonitizationClient.init(): ()
 		local promptToProduct = PromptToProduct.new(instance, MonitizationClient.PromptPurchase)
 		return function()
 			promptToProduct:Destroy()
+		end
+	end)
+	local countdowns: { CountdownUntilDate.CountdownUntilDate } =
+		createTaggedComponent("CountdownUntilDate", CountdownUntilDate)
+	RunService.Heartbeat:Connect(function()
+		for _, v in countdowns do
+			v:Update()
 		end
 	end)
 end

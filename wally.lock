@@ -25,7 +25,7 @@ dependencies = []
 [[package]]
 name = "hamie/steal-a-pirate"
 version = "0.1.0"
-dependencies = [["Charm", "littensy/charm@0.10.0"], ["Cmdr", "evaera/cmdr@1.12.0"], ["Comm", "sleitnick/comm@1.0.1"], ["Fusion", "elttob/fusion@0.3.0"], ["Net", "sleitnick/net@0.2.0"], ["Observers", "sleitnick/observers@0.3.4"], ["Promise", "evaera/promise@4.0.0"], ["Sensors", "synpixel/sensors@0.1.2"], ["ShapecastHitbox", "teamswordphin/shapecasthitbox@0.2.5"], ["Signal", "sleitnick/signal@2.0.3"], ["Streamable", "sleitnick/streamable@1.2.4"], ["TaskQueue", "sleitnick/task-queue@1.0.0"], ["TopbarPlus", "1foreverhd/topbarplus@3.2.5"], ["Trove", "sleitnick/trove@1.5.1"], ["ViewportFitter", "legendoj1/viewportfitter@1.0.1"], ["Zoneplus", "mattschrubb/zoneplus@3.2.0"], ["ProfileStore", "lm-loleris/profilestore@1.0.3"]]
+dependencies = [["Charm", "littensy/charm@0.10.0"], ["Cmdr", "evaera/cmdr@1.12.0"], ["Comm", "sleitnick/comm@1.0.1"], ["Fusion", "elttob/fusion@0.3.0"], ["Input", "sleitnick/input@2.3.0"], ["Net", "sleitnick/net@0.2.0"], ["Observers", "sleitnick/observers@0.3.4"], ["Promise", "evaera/promise@4.0.0"], ["Sensors", "synpixel/sensors@0.1.2"], ["ShapecastHitbox", "teamswordphin/shapecasthitbox@0.2.5"], ["Signal", "sleitnick/signal@2.0.3"], ["Streamable", "sleitnick/streamable@1.2.4"], ["TableUtil", "sleitnick/table-util@1.2.1"], ["TaskQueue", "sleitnick/task-queue@1.0.0"], ["TopbarPlus", "1foreverhd/topbarplus@3.2.5"], ["Trove", "sleitnick/trove@1.5.1"], ["ViewportFitter", "legendoj1/viewportfitter@1.0.1"], ["Zoneplus", "mattschrubb/zoneplus@3.2.0"], ["ProfileStore", "lm-loleris/profilestore@1.0.3"]]
 
 [[package]]
 name = "legendoj1/viewportfitter"
@@ -51,6 +51,11 @@ dependencies = []
 name = "sleitnick/comm"
 version = "1.0.1"
 dependencies = [["Option", "sleitnick/option@1.0.5"], ["Promise", "evaera/promise@4.0.0"], ["Signal", "sleitnick/signal@2.0.3"]]
+
+[[package]]
+name = "sleitnick/input"
+version = "2.3.0"
+dependencies = [["Signal", "sleitnick/signal@2.0.3"], ["Trove", "sleitnick/trove@1.5.1"]]
 
 [[package]]
 name = "sleitnick/net"
@@ -81,6 +86,11 @@ dependencies = []
 name = "sleitnick/streamable"
 version = "1.2.4"
 dependencies = [["Signal", "sleitnick/signal@1.5.0"], ["Trove", "sleitnick/trove@0.4.2"]]
+
+[[package]]
+name = "sleitnick/table-util"
+version = "1.2.1"
+dependencies = []
 
 [[package]]
 name = "sleitnick/task-queue"

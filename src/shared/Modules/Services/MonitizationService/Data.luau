@@ -2,6 +2,8 @@ local SharedTypes = require(script.Parent.Types)
 
 local SharedMonitizationData = {}
 
+SharedMonitizationData.LikeGoal = 1000
+
 SharedMonitizationData.Products = {
 	["10Donation"] = {
 		Id = 3333183922,
@@ -15,75 +17,75 @@ SharedMonitizationData.Products = {
 		ProductType = "Product",
 		ServerFunctionTypes = { "Donation" },
 
-		Amounts = { 10 },
+		Amounts = { 100 },
 	},
 	["1000Donation"] = {
 		Id = 3333183928,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Donation" },
 
-		Amounts = { 10 },
+		Amounts = { 1000 },
 	},
 	["10KDonation"] = {
 		Id = 3333183925,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Donation" },
 
-		Amounts = { 10 },
+		Amounts = { 10_000 },
 	},
 	["100KDonation"] = {
 		Id = 3333183917,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Donation" },
 
-		Amounts = { 10 },
+		Amounts = { 100_000 },
 	},
 	["1MDonation"] = {
 		Id = 3333183919,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Donation" },
 
-		Amounts = { 10 },
+		Amounts = { 1_000_000 },
 	},
 
-	["10KBeli"] = {
+	["10KCash"] = {
 		Id = 3333771747,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Leaderstat" },
 
-		StatNames = { "Beli" },
+		StatNames = { "Cash" },
 		Amounts = { 10_000 },
 	},
-	["100KBeli"] = {
+	["100KCash"] = {
 		Id = 3333771750,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Leaderstat" },
 
-		StatNames = { "Beli" },
+		StatNames = { "Cash" },
 		Amounts = { 100_000 },
 	},
-	["500KBeli"] = {
+	["500KCash"] = {
 		Id = 3333771748,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Leaderstat" },
 
-		StatNames = { "Beli" },
+		StatNames = { "Cash" },
 		Amounts = { 500_000 },
 	},
-	["2.5MBeli"] = {
+	["2.5MCash"] = {
 		Id = 3333771754,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Leaderstat" },
 
-		StatNames = { "Beli" },
+		StatNames = { "Cash" },
 		Amounts = { 2_500_000 },
 	},
-	["10MBeli"] = {
+	["10MCash"] = {
 		Id = 3333771753,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Leaderstat" },
 
-		StatNames = { "Beli" },
+		StatNames = { "Cash" },
 		Amounts = { 10_000_000 },
 	},
 
@@ -117,13 +119,30 @@ SharedMonitizationData.Products = {
 
 	["2XServerLuck"] = {
 		Id = 3333776801,
-		ProductType = "Gamepass",
+		ProductType = "Product",
 
 		ServerFunctionTypes = { "ServerLuckBoost" },
 
 		Portals = { "Main Portals" },
-		Durations = { 10 }, -- 30 * 60
+		Durations = { 15 * 60 }, -- 15 * 60
 		Amounts = { 2 },
+	},
+
+	["1Spin"] = {
+		Id = 3344943564,
+		ProductType = "Product",
+
+		ServerFunctionTypes = { "Spins" },
+
+		Amounts = { 1 },
+	},
+	["3Spins"] = {
+		Id = 3344943442,
+		ProductType = "Product",
+
+		ServerFunctionTypes = { "Spins" },
+
+		Amounts = { 3 },
 	},
 
 	["StarterPack"] = {
@@ -131,7 +150,7 @@ SharedMonitizationData.Products = {
 		ProductType = "Gamepass",
 		ServerFunctionTypes = { "Leaderstat", "Character" },
 
-		StatNames = { "Beli" },
+		StatNames = { "Cash" },
 		CharacterNames = { "Jimbay" },
 		Amounts = { 2500 },
 	},
@@ -145,12 +164,24 @@ SharedMonitizationData.Products = {
 		ServerFunctionTypes = { "ToggleSetting" },
 		ToggleableSettings = { ["AutoCollect"] = true },
 	},
+	["AdminCommands"] = {
+		Id = 1318110406,
+		ProductType = "Gamepass",
+		ServerFunctionTypes = { "AdminCommands" },
+	},
 	["FlyingCarpet"] = {
 		Id = 1319317896,
 		ProductType = "Gamepass",
 
 		ServerFunctionTypes = { "GiveTool" },
 		Values = { { ["FlyingCarpet"] = { Amount = 1, Permanent = true, SaveOnDeath = true } } },
+	},
+	["Mud Slap"] = {
+		Id = 1340759475,
+		ProductType = "Gamepass",
+
+		ServerFunctionTypes = { "GiveTool" },
+		Values = { { ["Mud Slap"] = { Amount = 1, Permanent = true, SaveOnDeath = true } } },
 	},
 } :: { SharedTypes.ProductInfo }
 

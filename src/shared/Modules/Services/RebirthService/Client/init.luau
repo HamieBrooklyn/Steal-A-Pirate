@@ -5,12 +5,15 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Packages.Net)
 local Observers = require(ReplicatedStorage.Packages.Observers)
 
+local SharedRebirthData = require(script.Parent.Data)
+
 local scoped = Fusion.scoped
 
 local player = Players.LocalPlayer
 
 local RebirthClient = {
 	GetRebirthData = Net:RemoteFunction("GetRebirthData"),
+	data = SharedRebirthData,
 }
 
 function RebirthClient.init()
@@ -25,13 +28,13 @@ function RebirthClient.init()
 	local function loadMenuData(seed: string, rebirths: number)
 		if seed and rebirths then
 			local rebirthVal: NumberValue = player:WaitForChild("leaderstats"):WaitForChild("Rebirths")
-			Observers.observeProperty(rebirthVal, "Value", function(value)
+			Observers.observeProperty(rebirthVal, "Value", function()
 				RebirthClient.rebirths:set(rebirthVal.Value)
 				return function() end
 			end)
 
 			menu.rootSeed:set(tonumber(seed))
-			menu.BeliVal:set(player:WaitForChild("leaderstats"):WaitForChild("Beli"))
+			menu.CashVal:set(player:WaitForChild("leaderstats"):WaitForChild("Cash"))
 		end
 	end
 	Net:Connect("RebirthDataLoaded", loadMenuData)

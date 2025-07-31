@@ -6,6 +6,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Text = require(ReplicatedStorage.Shared.Modules.Components.UI.Text)
 local formatTime = require(ReplicatedStorage.Shared.Modules.Utilities.formatTime)
 local Trove = require(ReplicatedStorage.Packages.Trove)
+local TimerBoard = require(ReplicatedStorage.Shared.Modules.Components.UI.TimerBoard)
 
 local Children = Fusion.Children
 local scoped, peek = Fusion.scoped, Fusion.peek
@@ -40,7 +41,7 @@ function InvisibleFruit.Unequipped(self: InvisibleFruit): () end
 
 function InvisibleFruit.Activated(self: InvisibleFruit): ()
 	local char = self.player.Character
-	if not char then
+	if not char or char:GetAttribute("Invisible") then
 		return
 	end
 	local root = char.PrimaryPart
@@ -49,33 +50,17 @@ function InvisibleFruit.Activated(self: InvisibleFruit): ()
 	end
 
 	local secondsLeft = self._scope:Value(0)
-	self._scope:New("BillboardGui")({
-		Name = "InvisibleTimer",
-		Size = UDim2.fromScale(5, 2),
-		StudsOffset = Vector3.new(0, 5, 0),
-		Parent = Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Billboards"),
-		Adornee = root,
-		[Children] = Text(self._scope, {
-			size = UDim2.fromScale(1, 1),
-			text = self._scope:Computed(function(use)
-				return formatTime(use(secondsLeft), {
-					mode = "text",
-					showDays = false,
-					showHours = false,
-					showMinutes = false,
-					showSeconds = true,
-					showMilliseconds = true,
-				})
-			end),
-		}),
-	})
 	local started = tick()
-	self._trove:Add(RunService.Heartbeat:Connect(function()
+	local timerBoard = TimerBoard(self._scope, {
+		secondsLeft = secondsLeft,
+		adornee = root,
+	})
+	RunService.Heartbeat:Connect(function()
 		secondsLeft:set(15 - (tick() - started))
 		if peek(secondsLeft) <= 0 then
-			self:Destroy()
+			timerBoard:Destroy()
 		end
-	end))
+	end)
 end
 
 function InvisibleFruit.Destroy(self: InvisibleFruit): ()

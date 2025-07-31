@@ -36,6 +36,7 @@ function PopupClient.init()
 	New(PopupClient.scope, "ScreenGui")({
 		Name = "Popups",
 		ResetOnSpawn = false,
+		DisplayOrder = 5,
 		Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
 		[Children] = New(PopupClient.scope, "Frame")({
 			AnchorPoint = Vector2.new(0.5, 1),

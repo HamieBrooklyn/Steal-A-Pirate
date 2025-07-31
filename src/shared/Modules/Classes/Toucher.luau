@@ -60,7 +60,7 @@ function Toucher.new(container: BasePart | Instance): Toucher
 	self._trove:Add(observe(playersOnCooldown, function(cooldownStartedTime: number, player: Player)
 		disconnectCooldown()
 		cooldownConnection = RunService.Heartbeat:Connect(function()
-			if tick() - cooldownStartedTime < self.Cooldown then
+			if os.time() - cooldownStartedTime < self.Cooldown then
 				return
 			end
 			playersOnCooldown(function(state)
@@ -95,7 +95,7 @@ function Toucher.new(container: BasePart | Instance): Toucher
 			if self.Cooldown then
 				playersOnCooldown(function(state)
 					state = table.clone(state)
-					state[player] = tick()
+					state[player] = os.time()
 					return state
 				end)
 			end

@@ -12,15 +12,17 @@ local RadioClient = {}
 function RadioClient.pickRandomSong(category: string?)
 	category = category or RadioClient.categoryAtom()
 	local songs = RadioClient.categorizedSongs[category]
-	local playedSongs = RadioClient.songsPlayedInCategory[category]
-	if #songs == #playedSongs then
-		RadioClient.songsPlayedInCategory[category] = {}
-	end
-	local chosenSong: Sound
-	repeat
-		chosenSong = songs[math.random(1, #songs)]
-	until not table.find(playedSongs, chosenSong)
-	table.insert(RadioClient.songsPlayedInCategory[category], chosenSong)
+	-- local playedSongs = RadioClient.songsPlayedInCategory[category]
+	-- if #songs == #playedSongs then
+	-- 	RadioClient.songsPlayedInCategory[category] = {}
+	-- end
+	-- local tries = 0
+	local chosenSong = songs[math.random(1, #songs)]
+	-- repeat
+	-- 	chosenSong = songs[math.random(1, #songs)]
+	-- 	tries += 1
+	-- until not table.find(playedSongs, chosenSong) or tries > 100
+	-- table.insert(RadioClient.songsPlayedInCategory[category], chosenSong)
 	RadioClient.songAtom(chosenSong)
 end
 
@@ -51,17 +53,21 @@ function RadioClient.init()
 	subscribe(RadioClient.categoryAtom, function(state, prev)
 		RadioClient.pickRandomSong()
 	end)
+	local endConnection: RBXScriptConnection
 	subscribe(RadioClient.songAtom, function(state: Sound, prev: Sound?)
+		if endConnection then
+			endConnection:Disconnect()
+		end
 		if prev then
 			prev:Stop()
 		end
 
 		checkMuted()
 
-		state:Play()
-		state.Ended:Once(function()
+		endConnection = state.Ended:Once(function()
 			RadioClient.pickRandomSong()
 		end)
+		state:Play()
 		songPlaying:setLabel(state.Name)
 	end)
 	subscribe(RadioClient.mutedAtom, checkMuted)

@@ -89,14 +89,14 @@ function Particle.Emit(self: Particle, emitCount: number?, emitCompleted: (() ->
 		disconnect()
 	end
 	if emitCompleted ~= nil then
-		local startedTime = tick()
-		self._completedConnection = RunService.Heartbeat:Connect(function()
-			if tick() - startedTime < secondsUntilComplete then
+		local startedTime = os.time()
+		self._completedConnection = self._trove:Add(RunService.Heartbeat:Connect(function()
+			if os.time() - startedTime < secondsUntilComplete then
 				return
 			end
 			disconnect()
 			emitCompleted()
-		end)
+		end))
 		return disconnect
 	end
 end

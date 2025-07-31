@@ -1,3 +1,4 @@
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Gradients = ReplicatedStorage.Assets.Templates.Gui.Gradients
@@ -15,7 +16,9 @@ local SharedToolData = require(Services.ToolService.Data)
 local abbreviateNumber = require(Modules.Utilities.abbreviateNumber)
 local formatTime = require(Modules.Utilities.formatTime)
 
+local SharedSpawningData = require(Services.SpawningService.Data)
 local SharedData = require(script.Parent.Parent.Data)
+
 local CharacterFrame = require(script.CharacterFrame)
 local RewardFrame = require(script.RewardFrame)
 
@@ -24,9 +27,13 @@ local Trove = require(ReplicatedStorage.Packages.Trove)
 local Net = require(ReplicatedStorage.Packages.Net)
 local Observers = require(ReplicatedStorage.Packages.Observers)
 local Gradiented = require(Modules.Classes.Gradiented)
+local Particle = require(Modules.Classes.Particle)
+local Sound = require(Modules.Classes.Sound)
+local Charm = require(ReplicatedStorage.Packages.Charm)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 local scoped, peek = Fusion.scoped, Fusion.peek
+local atom, subscribe = Charm.atom, Charm.subscribe
 
 local RebirthAttempt = Net:RemoteFunction("RebirthAttempt")
 
@@ -40,17 +47,13 @@ type self = {
 	rootSeed: Fusion.Value<number?, any>,
 	rebirths: Fusion.Value<number?, any>,
 
-	BeliVal: Fusion.Value<NumberValue?, any>,
-	Beli: Fusion.Value<number?, any>,
+	CashVal: Fusion.Value<NumberValue?, any>,
+	Cash: Fusion.Value<number?, any>,
 
-	BeliRequiredText: Fusion.Value<string, any>,
+	CashRequiredText: Fusion.Value<string, any>,
 
-	hasEnoughBeli: Fusion.Value<boolean, any>,
+	hasEnoughCash: Fusion.Value<boolean, any>,
 	ownsAllCharacters: Fusion.Value<boolean, any>,
-
-	charactersRequiredNames: Fusion.Value<{ string }, any>,
-	ownedCharacters: Fusion.Value<{ string }, any>,
-	requiredCharactersUnlocked: Fusion.Value<{ string }, any>,
 
 	canRebirth: Fusion.Computed<boolean>,
 	checkProgress: Fusion.Computed<any>,
@@ -64,7 +67,7 @@ type self = {
 }
 export type RebirthMenu = typeof(setmetatable({} :: self, RebirthMenu))
 export type RebirthLevel = {
-	BeliRequired: number,
+	CashRequired: number,
 	Characters: { string },
 }
 
@@ -79,123 +82,111 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	self.rootSeed = self.scope:Value(nil) :: Fusion.Value<number?, any>
 	self.rebirths = rebirths :: Fusion.Value<number?, any>
 
-	self.BeliVal = self.scope:Value(nil) :: Fusion.Value<NumberValue?, any>
-	self.Beli = self.scope:Value(nil) :: Fusion.Value<number?, any>
+	self.CashVal = self.scope:Value(nil) :: Fusion.Value<NumberValue?, any>
+	self.Cash = self.scope:Value(nil) :: Fusion.Value<number?, any>
 
-	self.BeliRequiredText = self.scope:Value("") :: Fusion.Value<string, any>
+	self.CashRequiredText = self.scope:Value("") :: Fusion.Value<string, any>
 
-	self.hasEnoughBeli = self.scope:Value(false) :: Fusion.Value<boolean, any>
+	self.hasEnoughCash = self.scope:Value(false) :: Fusion.Value<boolean, any>
 	self.ownsAllCharacters = self.scope:Value(false) :: Fusion.Value<boolean, any>
 
-	self.charactersRequiredNames = self.scope:Value({}) :: Fusion.Value<{ string }, any>
-	self.ownedCharacters = self.scope:Value({}) :: Fusion.Value<{ string }, any>
-	self.requiredCharactersUnlocked = self.scope:Value({}) :: Fusion.Value<{ string }, any>
+	local requiredCharacters = self.scope:Value({})
 
 	self.menuShown = self.scope:Value(false) :: Fusion.Value<boolean, any>
 
 	self.canRebirth = self.scope:Computed(function(use)
-		return use(self.hasEnoughBeli) and use(self.ownsAllCharacters)
+		return use(self.hasEnoughCash) and use(self.ownsAllCharacters)
 	end)
 	self.checkProgress = self.scope:Computed(function(use)
 		local progress = 0
 
-		local BeliState: number? = use(self.Beli)
+		local CashState: number? = use(self.Cash)
 		local levelDataState: RebirthLevel? = peek(self.rebirthLevelData)
 
-		if BeliState then
-			local fulfilled = 0
-			local totalItems = #use(self.charactersRequiredNames)
+		if CashState then
+			-- local requiredCharactersState = use(requiredCharacters)
 
-			local reqCharsUnlockedState = use(self.requiredCharactersUnlocked)
-			for _, itemName in ipairs(reqCharsUnlockedState) do
-				if table.find(reqCharsUnlockedState, itemName) then
-					fulfilled += 1
-				end
-			end
+			-- local totalItems = 0
+			-- local fulfilled = 0
+			-- for _, v in requiredCharactersState do
+			-- 	totalItems += 1
+			-- 	if v == true then
+			-- 		fulfilled += 1
+			-- 	end
+			-- end
 
-			local BeliProgress = math.clamp(
-				(BeliState / (levelDataState and levelDataState.BeliRequired or SharedData.Constants.OverCost)),
+			local CashProgress = math.clamp(
+				(CashState / (levelDataState and levelDataState.CashRequired or SharedData.Constants.OverCost)),
 				0,
 				1
 			)
 
-			local itemProgress = if totalItems > 0 then fulfilled / totalItems else 0
-			local finalProgress = (BeliProgress + itemProgress) / 2
+			-- local itemProgress = if totalItems > 0 then fulfilled / totalItems else 0
+			-- local finalProgress = (CashProgress + itemProgress) / 2
 
-			progress = finalProgress
+			progress = CashProgress
 		end
 
 		return progress
 	end)
 
 	-- Loading and updating characters as they are added or removed:
-	self.trove:Add(
-		BaseClient.characterAddedToBase:Connect(
-			function(sentBase: Base.Base, characterName: string, platform: Platform.Platform)
-				BaseClient.GetBase():andThen(function(base: Base.Base)
-					if base.Id == sentBase.Id then
-						local ownedCharsState = peek(self.ownedCharacters)
-						table.insert(ownedCharsState, characterName)
-						if
-							table.find(peek(self.charactersRequiredNames), characterName)
-							and not table.find(peek(self.requiredCharactersUnlocked), characterName)
-						then
-							local requiredCharsUnlockedState = peek(self.requiredCharactersUnlocked)
-							table.insert(requiredCharsUnlockedState, characterName)
-							self.requiredCharactersUnlocked:set(requiredCharsUnlockedState)
-						end
-						self.ownedCharacters:set(ownedCharsState)
-
-						self.ownsAllCharacters:set(
-							#peek(self.requiredCharactersUnlocked) == #peek(self.charactersRequiredNames)
-						)
-					end
-				end)
+	local function checkOwnedCharacters()
+		BaseClient:GetBase():andThen(function(base: Base.Base)
+			local foundCharacters = {}
+			for _, v in base.Platforms do
+				local charName = peek(v.CharacterName)
+				if not charName then
+					continue
+				end
+				table.insert(foundCharacters, charName)
 			end
-		)
-	)
-	self.trove:Add(
-		BaseClient.characterRemovedFromBase:Connect(
-			function(sentBase: Base.Base, characterName: string, platform: Platform.Platform)
-				BaseClient.GetBase():andThen(function(base: Base.Base)
-					if base.Id == sentBase.Id then
-						local ownedCharsState = peek(self.ownedCharacters)
-						table.remove(ownedCharsState, table.find(ownedCharsState, characterName))
-						self.ownedCharacters:set(ownedCharsState)
 
-						local requiredCharsUnlockedState = peek(self.requiredCharactersUnlocked)
-						local i = table.find(requiredCharsUnlockedState, characterName)
-						if i then
-							table.remove(requiredCharsUnlockedState, i)
-							self.requiredCharactersUnlocked:set(requiredCharsUnlockedState)
-							self.ownsAllCharacters:set(
-								#peek(self.requiredCharactersUnlocked) == #peek(self.charactersRequiredNames)
-							)
-						end
-					end
-				end)
+			local requiredCharactersState = peek(requiredCharacters)
+			for i, _ in requiredCharactersState do
+				requiredCharactersState[i] = table.find(foundCharacters, i) ~= nil
 			end
-		)
-	)
+			requiredCharacters:set(requiredCharactersState)
+
+			local hasAll = true
+			for _, v in requiredCharactersState do
+				if not v then
+					hasAll = false
+				end
+			end
+			self.ownsAllCharacters:set(hasAll)
+		end)
+	end
+	BaseClient:GetBase():andThen(function(base: Base.Base)
+		-- self.trove:Add(BaseClient.characterAddedToBase:Connect(checkOwnedCharacters))
+		-- self.trove:Add(BaseClient.characterRemovedFromBase:Connect(checkOwnedCharacters))
+		-- self.trove:Add(BaseClient.baseLoaded:Connect(checkOwnedCharacters))
+		-- self.trove:Add(BaseClient.baseReset:Connect(checkOwnedCharacters))
+		-- self.trove:Add(BaseClient.platformsReset:Connect(checkOwnedCharacters))
+		for _, v in base.Platforms do
+			self.scope:Observer(v.CharacterName):onBind(checkOwnedCharacters)
+		end
+		checkOwnedCharacters()
+	end)
 
 	self.random = self.scope:Value(nil) :: Fusion.Value<Random?, any>
 
-	local BeliChangeCleanup: (() -> ())?
-	self.scope:Observer(self.BeliVal):onChange(function()
-		if BeliChangeCleanup then
-			BeliChangeCleanup()
-			BeliChangeCleanup = nil
+	local CashChangeCleanup: (() -> ())?
+	self.scope:Observer(self.CashVal):onChange(function()
+		if CashChangeCleanup then
+			CashChangeCleanup()
+			CashChangeCleanup = nil
 		end
 
-		local BeliValState: NumberValue? = peek(self.BeliVal)
-		if BeliValState then
-			BeliChangeCleanup = self.trove:Add(Observers.observeProperty(BeliValState, "Value", function(value)
-				self.Beli:set(value)
+		local CashValState: NumberValue? = peek(self.CashVal)
+		if CashValState then
+			CashChangeCleanup = self.trove:Add(Observers.observeProperty(CashValState, "Value", function(value)
+				self.Cash:set(value)
 
 				local levelDataState: RebirthLevel = peek(self.rebirthLevelData)
-				local required = levelDataState and levelDataState.BeliRequired or SharedData.Constants.OverCost
-				self.hasEnoughBeli:set(value >= required)
-				self.BeliRequiredText:set(`{abbreviateNumber(value)}/{abbreviateNumber(required)}`)
+				local required = levelDataState and levelDataState.CashRequired or SharedData.Constants.OverCost
+				self.hasEnoughCash:set(value >= required)
+				self.CashRequiredText:set(`{abbreviateNumber(value)}/{abbreviateNumber(required)}`)
 				return function() end
 			end))
 		end
@@ -221,16 +212,20 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 			return
 		end
 
-		self.requiredCharactersUnlocked:set({})
-		self.charactersRequiredNames:set({})
+		requiredCharacters:set({})
 
 		local rnd = Random.new(seedState)
 		self.random:set(rnd)
 
 		local levelDataState: RebirthLevel = peek(self.rebirthLevelData)
 
+		local function obtainable(charName: string)
+			return SharedSpawningData.Characters.Info[charName].Natural == true
+				or SharedSpawningData.Characters.Info[charName].Natural == nil
+		end
+
 		if levelDataState then
-			local chosenCharacterNames = {}
+			local chosenCharacters = {}
 			for _, v in levelDataState.Characters do
 				local charactersWithRarity = SpawningClient.characterNamesByRarity[v]
 				local tries = 0
@@ -238,10 +233,12 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 				repeat
 					charName = charactersWithRarity[rnd:NextInteger(1, #charactersWithRarity)]
 					tries += 1
-				until table.find(chosenCharacterNames, charName) == nil or tries > 100
-				table.insert(chosenCharacterNames, charName)
+				until obtainable(charName) and (chosenCharacters[charName] == nil or tries > 100)
+				chosenCharacters[charName] = false
 			end
-			self.charactersRequiredNames:set(chosenCharacterNames)
+			requiredCharacters:set(chosenCharacters)
+
+			checkOwnedCharacters()
 		end
 	end)
 
@@ -258,7 +255,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 		Text = self.CashRequiredText,
 		TextColor3 = self.scope:Tween(
 			self.scope:Computed(function(use)
-				return use(self.hasEnoughBeli) and Color3.new(0, 1, 0) or startTextColor
+				return use(self.hasEnoughCash) and Color3.new(0, 1, 0) or startTextColor
 			end),
 			TweenInfo.new(0.5)
 		),
@@ -266,13 +263,13 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 
 	local shownValues: { Fusion.Value<boolean, any> } = {}
 	self.scope:Hydrate(requirementsFrame:WaitForChild("Contents"))({
-		[Children] = self.scope:ForValues(self.charactersRequiredNames, function(_, scope, name)
+		[Children] = self.scope:ForPairs(requiredCharacters, function(_, scope, name, owned)
 			local shown = scope:Value(mainFrame.Visible)
 			table.insert(shownValues, shown)
 
-			return CharacterFrame(scope, {
-				ownedCharacters = self.ownedCharacters,
+			return name, CharacterFrame(scope, {
 				characterName = name,
+				owned = owned,
 				shown = shown,
 			})
 		end),
@@ -312,10 +309,10 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 
 	-- Managing rewards:
 	self.scope:RewardFrame({
-		titleText = "Starting Beli",
+		titleText = "Starting Cash",
 		infoText = self.scope:Computed(function(use)
 			local rebirthsState: number? = use(self.rebirths)
-			return rebirthsState and `${abbreviateNumber(SharedData.Constants.StartingBeli * (rebirthsState + 1))}`
+			return rebirthsState and `${abbreviateNumber(SharedData.Constants.StartingCash * (rebirthsState + 1))}`
 				or ""
 		end),
 		titleGradient = Gradients.Apple,
@@ -323,10 +320,10 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	}).Parent =
 		rewardsFrame:WaitForChild("Contents")
 	self.scope:RewardFrame({
-		titleText = "Beli Multiplier",
+		titleText = "Cash Multiplier",
 		infoText = self.scope:Computed(function(use)
 			local rebirthsState: number? = use(self.rebirths)
-			return rebirthsState and `x{SharedData.Constants.BeliMultiplier * (rebirthsState + 1)}` or ""
+			return rebirthsState and `x{SharedData.Constants.CashMultiplier * (rebirthsState + 1)}` or ""
 		end),
 		titleGradient = Gradients.Banana,
 		infoTextColor = Color3.new(1, 1, 0),
@@ -344,6 +341,10 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 						}
 					)
 				or ""
+		end),
+		shown = self.scope:Computed(function(use)
+			local rebirthsState: number? = use(self.rebirths)
+			return use(rebirthsState + 1) < SharedData.Constants.LockTimerMaxMult
 		end),
 		titleGradient = Gradients.RipeBanana,
 		infoTextColor = Color3.new(1, 1, 0),
@@ -365,6 +366,8 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	}).Parent =
 		rewardsFrame:WaitForChild("Contents")
 
+	local particle = Particle.new(ReplicatedStorage.Assets.VFX.Particles.Rebirth, Vector3.zero)
+
 	-- Updating rebirth button:
 	self.scope:Hydrate(rebirthButton)({
 		Text = self.scope:Computed(function(use)
@@ -376,6 +379,14 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 				local success = RebirthAttempt:InvokeServer()
 				if success then
 					self.rebirths:set(peek(self.rebirths) + 1)
+
+					local char = Players.LocalPlayer.Character
+					if char then
+						particle.part:PivotTo(char:GetPivot())
+						particle:Emit()
+					end
+
+					Sound.new(ReplicatedStorage.Assets.Sounds.SoundEffects.Rebirth, workspace):Play()
 				end
 			end
 		end,

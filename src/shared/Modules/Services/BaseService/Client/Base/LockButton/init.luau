@@ -61,6 +61,7 @@ function LockButton.new(
 	local toucher = Toucher.new(button)
 	self.trove:Add(toucher)
 
+	local touchDB = false
 	local touchCon: RBXScriptConnection?
 	self.scope:Observer(props.owner):onBind(function()
 		if touchCon then
@@ -71,12 +72,22 @@ function LockButton.new(
 			return
 		end
 
-		touchCon = toucher.PlayerTouched:Connect(function(playerTouched: Player)
-			if peek(props.owner) ~= playerTouched.UserId then
+		touchCon = self.trove:Add(button.Touched:Connect(function(hit: BasePart)
+			local playerTouched = Players:GetPlayerFromCharacter(hit:FindFirstAncestorOfClass("Model"))
+			if
+				not playerTouched
+				or peek(props.owner) ~= playerTouched.UserId
+				or peek(self.secondsLeft) > 0
+				or touchDB
+			then
 				return
 			end
+			touchDB = true
+			task.delay(1, function()
+				touchDB = false
+			end)
 			Events.LockBaseAttempt:FireServer(props.baseId)
-		end)
+		end))
 	end)
 
 	self.scope:LockedBoard({
@@ -93,7 +104,7 @@ function LockButton.Heartbeat(self: LockButton)
 	-- local duration = SharedData.LockedDuration
 	-- 	+ (SharedRebirthData.Constants.LockTimerIncrement * peek(RebirthClient.rebirths))
 	local duration = peek(self.lockDuration)
-	self.secondsLeft:set(math.clamp(duration - (tick() - peek(self.lastLocked)), 0, duration))
+	self.secondsLeft:set(math.clamp(duration - (os.time() - peek(self.lastLocked)), 0, duration))
 	if peek(self.secondsLeft) == 0 then
 		self.locked:set(false)
 	else

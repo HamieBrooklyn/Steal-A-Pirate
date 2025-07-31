@@ -38,7 +38,7 @@ local function ToggleButton(
 	local frame = scope:New("Frame")({
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.92, 0.5),
-		Size = UDim2.fromScale(0.15, 0.3),
+		Size = UDim2.fromScale(0.1, 0.3),
 
 		BackgroundTransparency = 0.7,
 		BackgroundColor3 = scope:Computed(function(use)

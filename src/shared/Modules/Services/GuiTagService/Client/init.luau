@@ -13,7 +13,7 @@ function GuiTagClient.init()
 		module = require(module)
 
 		Observers.observeTag(tag, function(instance: Instance)
-			if not instance:IsDescendantOf(Players.LocalPlayer) then
+			if not instance:IsDescendantOf(Players.LocalPlayer) and not instance:IsA("UIGradient") then
 				return
 			end
 			task.spawn(module.new, instance)

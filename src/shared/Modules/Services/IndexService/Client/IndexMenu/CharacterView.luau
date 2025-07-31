@@ -26,6 +26,8 @@ local function CharacterView(
 
 		strokeColor: UsedAs<Color3>,
 		isUnknownRarity: UsedAs<boolean>,
+
+		interact: () -> (),
 	}
 )
 	local frame: typeof(CharacterViewTemp) = Hydrate(scope, CharacterViewTemp:Clone())({
@@ -40,6 +42,13 @@ local function CharacterView(
 			end)
 		end)
 	)
+	scope:Hydrate(mainFrame:WaitForChild("Interact"))({
+		[Fusion.OnEvent("MouseButton1Click")] = function()
+			if props.unlocked then
+				props.interact(props.characterName)
+			end
+		end,
+	})
 
 	Hydrate(scope, mainFrame:WaitForChild("Name"))({
 		Text = Computed(scope, function(use)

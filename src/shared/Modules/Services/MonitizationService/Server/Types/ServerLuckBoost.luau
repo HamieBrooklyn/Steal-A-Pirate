@@ -12,14 +12,15 @@ local formatTime = require(ReplicatedStorage.Shared.Modules.Utilities.formatTime
 local function ServerLuckBoost(player: Player, wasPurchased: boolean, data: SharedTypes.ProductInfo, index: number)
 	if wasPurchased then
 		for i, v in data.Portals do
-			SpawningServer.spawners[SpawningServer.portalIdsByName[v]]:ActivateLuckBoost(
+			SpawningServer.spawners[SpawningServer.spawnerIdsByName[v]]:ActivateLuckBoost(
 				data.Amounts[i],
 				data.Durations[i]
 			)
 			PopupServer.SendServerPopup({
-				message = `A {data.Amounts[i]}X Luck boost has started for {formatTime(data.Durations[i], {
-					mode = "text",
-				})} at {v}`,
+				message = `{player.Name} started a {data.Amounts[i]}X Luck boost for {formatTime(
+					data.Durations[i],
+					{ mode = "text" }
+				)} at {v}`,
 				duration = 5,
 				gradient = ReplicatedStorage.Assets.Templates.Gui.Gradients.Apple,
 			})

@@ -1,10 +1,9 @@
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local InteractPromptTemp = ReplicatedStorage.Assets.Templates.PirateInteract
 local AnimateScript = ReplicatedStorage.Assets.Templates.Animate
-
-local AnimatedHighlight = require(ReplicatedStorage.Shared.Modules.Classes.AnimatedHighlight)
 
 local SharedRarityData = require(ReplicatedStorage.Shared.Modules.Data.Rarities)
 local SharedTypes = require(script.Parent.Parent.Types)
@@ -15,8 +14,16 @@ local Trove = require(ReplicatedStorage.Packages.Trove)
 local Events = require(script.Parent.Events)
 local observeDescendants = require(ReplicatedStorage.Shared.Modules.Utilities.observeDescendants)
 local Sound = require(ReplicatedStorage.Shared.Modules.Classes.Sound)
+local Signal = require(ReplicatedStorage.Packages.Signal)
+
+local getWeightedRandom = require(ReplicatedStorage.Shared.Modules.Utilities.getWeightedRandom)
 
 local scoped, peek = Fusion.scoped, Fusion.peek
+
+local mutations = {}
+for _, v in script.Parent.Mutations:GetChildren() do
+	mutations[v.Name] = require(v)
+end
 
 local Character = {}
 Character.__index = Character
@@ -37,11 +44,14 @@ type self = {
 	Character: Model,
 	Humanoid: Humanoid,
 	Prompt: ProximityPrompt,
+
+	despawn: Signal.Signal,
 }
 
 function Character.new(
 	model: Model,
 	data: SharedTypes.CharacterData,
+	luckMult: number,
 	spawnCFrame: CFrame,
 	exitPosition: Vector3,
 	parent: Instance?
@@ -67,6 +77,33 @@ function Character.new(
 	self.Character:SetAttribute("CharacterId", self.id)
 	trove:Add(self.Character)
 
+	self.despawn = self._trove:Add(Signal.new()) :: Signal.Signal
+
+	local mutationClassesApplied = {}
+	local mutationsApplied = {}
+
+	local mutationCount = 0
+	for _, _ in SharedData.Mutations do
+		mutationCount += 1
+	end
+	for _ = 1, mutationCount do
+		local chosenMutation = getWeightedRandom(SharedData.Spawning.MutationChances, luckMult)
+		local mutData = SharedData.Mutations[chosenMutation]
+		if mutData and mutations[mutData.Class] and not table.find(mutationClassesApplied, mutData.Class) then
+			table.insert(mutationClassesApplied, mutData.Class)
+			table.insert(mutationsApplied, chosenMutation)
+		end
+	end
+	for i, v in mutationsApplied do
+		self.Character:SetAttribute(
+			"Mutations",
+			`{self.Character:GetAttribute("Mutations") or ""}{v}{i < #mutationsApplied and "," or ""}`
+		)
+	end
+	if #mutationsApplied > 0 then
+		self.Character:AddTag("Mutated")
+	end
+
 	local rarityData = SharedRarityData.Info[data.Rarity]
 	if rarityData.CharacterHighlight then
 		local hl = Instance.new("Highlight")
@@ -84,7 +121,9 @@ function Character.new(
 		end
 	end))
 
-	AnimateScript:Clone().Parent = self.Character
+	if not RunService:IsStudio() then
+		AnimateScript:Clone().Parent = self.Character
+	end
 	self.Character:AddTag(SharedData.Characters.Tag)
 
 	self.Humanoid = self.Character:FindFirstChildOfClass("Humanoid")
@@ -94,15 +133,23 @@ function Character.new(
 
 		local status = peek(self.Status)
 		if status == "MovingToExit" then
+			self.despawn:Fire()
 			self:Destroy()
 		elseif status == "MovingToBase" and state ~= nil then
 			local base = BaseServer.GetPlayerBase(state)
 			if base then
-				base:AddCharacterAttempt(state, model.Name, self)
+				base:AddCharacterAttempt(state, model.Name, self, mutationsApplied)
+				self.despawn:Fire()
 				self:Destroy()
 			end
 		end
 	end))
+	self.Humanoid.Running:Connect(function(speed)
+		for _, v in self.Humanoid:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks() do
+			v:AdjustSpeed(speed / 10)
+		end
+	end)
+	self.Humanoid.WalkSpeed = SharedData.WalkSpeed
 
 	local prompt = scope:Hydrate(InteractPromptTemp:Clone())({
 		Parent = self.Character.PrimaryPart,
@@ -140,7 +187,7 @@ function Character.new(
 			Sound.new(ReplicatedStorage.Assets.Sounds.SoundEffects.CharacterCollect, self.Character.PrimaryPart):Play()
 
 			if lastPlayer then
-				local lastBase = BaseServer.GetPlayerBase(state)
+				local lastBase = BaseServer.GetPlayerBase(lastPlayer)
 				if lastBase then
 					local charState = peek(lastBase.CharactersAdding)
 					local i = table.find(charState, self)

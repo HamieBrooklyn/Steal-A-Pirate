@@ -12,7 +12,7 @@ local scoped = Fusion.scoped
 
 local PlayerDataClient = {
 	leaderstats = {} :: {
-		Beli: Fusion.Value<number, any>,
+		Cash: Fusion.Value<number, any>,
 		Rebirths: Fusion.Value<number, any>,
 	},
 }
@@ -24,7 +24,9 @@ PlayerDataClient.getRedeemedCodes = Net:RemoteFunction("GetRedeemedCodes")
 function PlayerDataClient.init()
 	local scope = scoped(Fusion)
 
-	Net:Connect("ProfileLoaded", function()
+	PlayerDataClient.loaded = false
+
+	local function check()
 		local leaderstats: Folder = Players.LocalPlayer:WaitForChild("leaderstats")
 
 		observeChildren(leaderstats, function(value: ValueBase?)
@@ -42,7 +44,12 @@ function PlayerDataClient.init()
 		end)
 
 		PlayerDataClient.LeaderstatsLoaded:Fire()
-	end)
+		PlayerDataClient.loaded = true
+	end
+	if Players.LocalPlayer:GetAttribute("ProfileLoaded") then
+		check()
+	end
+	Net:Connect("ProfileLoaded", check)
 end
 
 return PlayerDataClient

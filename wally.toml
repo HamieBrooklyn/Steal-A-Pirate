@@ -10,6 +10,7 @@ Comm = "sleitnick/comm@1.0.1"
 Cmdr = "evaera/cmdr@1.12.0"
 
 Fusion = "elttob/fusion@0.3.0"
+Input = "sleitnick/input@2.3.0"
 Net = "sleitnick/net@0.2.0"
 Observers = "sleitnick/observers@^0.3.4"
 Promise = "evaera/promise@4.0.0"
@@ -22,6 +23,7 @@ Sensors = "synpixel/sensors@0.1.2"
 TopbarPlus = "1foreverhd/topbarplus@3.2.5"
 TaskQueue = "sleitnick/task-queue@1.0.0"
 Trove = "sleitnick/trove@1.5.0"
+TableUtil = "sleitnick/table-util@1.2.1"
 
 ViewportFitter = "legendoj1/viewportfitter@1.0.1"
 

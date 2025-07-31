@@ -1,4 +1,7 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SpawnData = {}
+
+SpawnData.WalkSpeed = 15 -- 15
 
 SpawnData.Spawning = {
 	Tag = "Spawner",
@@ -12,8 +15,8 @@ SpawnData.Spawning = {
 			Blacklist = {},
 
 			RarityGuaranteeCooldowns = {
-				["Legendary"] = 20, -- 15 * 60
-				["Mythical"] = 30, -- 30 * 60
+				["Legendary"] = 15 * 60, -- 15 * 60
+				["Mythical"] = 35 * 60, -- 30 * 60
 			},
 		},
 	},
@@ -27,6 +30,70 @@ SpawnData.Spawning = {
 		Mythical = 0.001,
 		Unknown = 0.00005,
 	},
+	MutationChances = {
+		None = 0.95, -- 0.95
+		-- Big = 0.4, -- 0.1
+		-- Small = 0.4, -- 0.1
+		ObservationHaki = 0.01, -- 0.01
+		ArnamentHaki = 0.001, -- 0.001
+		ConquerersHaki = 0.0001, -- 0.0001
+	},
+}
+
+SpawnData.Mutations = {
+	-- Big = {
+	-- 	Class = "Scale",
+	-- 	Mult = 1.25,
+	-- 	Values = {
+	-- 		Scale = 1.1,
+	-- 	},
+	-- },
+	-- Small = {
+	-- 	Class = "Scale",
+	-- 	Mult = 1.25,
+	-- 	Values = {
+	-- 		Scale = 0.9,
+	-- 	},
+	-- },
+	ObservationHaki = {
+		Class = "Haki",
+		Mult = 2,
+
+		Title = "Observation Haki",
+		Gradient = ReplicatedStorage.Assets.Templates.Gui.Gradients.Haki.Observation,
+
+		Values = {
+			VFX = ReplicatedStorage.Assets.VFX.Haki.Observation,
+		},
+	},
+	ArmenentHaki = {
+		Class = "Haki",
+		Mult = 5,
+
+		Title = "Armenent Haki",
+		Gradient = ReplicatedStorage.Assets.Templates.Gui.Gradients.Haki.Armenent,
+
+		Values = {
+			VFX = ReplicatedStorage.Assets.VFX.Haki.Armenent,
+		},
+	},
+	ConquerersHaki = {
+		Class = "Haki",
+		Mult = 10,
+
+		Title = "Conquerers Haki",
+		Gradient = ReplicatedStorage.Assets.Templates.Gui.Gradients.Haki.Conquerers,
+
+		Values = {
+			VFX = ReplicatedStorage.Assets.VFX.Haki.Conquerer,
+		},
+	},
+}
+
+SpawnData.ImportantRarities = {
+	"Legendary",
+	"Mythical",
+	"Unknown",
 }
 
 SpawnData.Characters = {
@@ -253,7 +320,7 @@ SpawnData.Characters = {
 		["Loafy G5"] = {
 			Price = 125000000,
 			PriceString = "$125M",
-			Cashflow = 600000,
+			Cashflow = 100000,
 			CashflowString = "$600K/Sec",
 			Rarity = "Mythical",
 		},
@@ -265,11 +332,58 @@ SpawnData.Characters = {
 			Rarity = "Mythical",
 		},
 		["Golden Man"] = {
-			Price = 2000000,
-			PriceString = "$2M",
-			Cashflow = 10000,
+			Price = 200_000_000,
+			PriceString = "$200M",
+			Cashflow = 100000,
 			CashflowString = "$10K/Sec",
 			Rarity = "Unknown",
+		},
+
+		-- TROLL --
+		["Until death do us apart"] = {
+			Natural = false,
+			Stealable = false,
+
+			Price = 15_000_000_000,
+			PriceString = "$15B",
+			Cashflow = 600000,
+			Rarity = "Unknown",
+		},
+		["Gojo"] = {
+			Natural = false,
+			Stealable = false,
+
+			Price = 15_000_000_000,
+			PriceString = "$15B",
+			Cashflow = 600000,
+			Rarity = "Unknown",
+		},
+		["Gubby"] = {
+			Natural = false,
+			Stealable = false,
+
+			Price = 15_000_000_000,
+			PriceString = "$15B",
+			Cashflow = 600000,
+			Rarity = "Unknown",
+		},
+		["Blackmore"] = {
+			Natural = false,
+			Stealable = false,
+
+			Price = 20_000_000_000,
+			PriceString = "$20B",
+			Cashflow = 600000,
+			Rarity = "Unknown",
+		},
+		["Egon"] = {
+			Natural = false,
+			Stealable = false,
+
+			Price = 100_000_000_000,
+			PriceString = "$100B",
+			Cashflow = 800000,
+			Rarity = "Mythical",
 		},
 	},
 }

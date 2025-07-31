@@ -46,6 +46,7 @@ local function Board(
 				local frame = RankFrame(itemScope, {
 					order = index,
 
+					userId = data.key,
 					name = username,
 					score = if props.abbreviate
 						then abbreviateNumber(data.value)

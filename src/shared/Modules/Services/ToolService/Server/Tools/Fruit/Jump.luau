@@ -1,8 +1,17 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local StarterPlayer = game:GetService("StarterPlayer")
+
 local AnimatedHighlight = require(ReplicatedStorage.Shared.Modules.Classes.AnimatedHighlight)
+local TimerBoard = require(ReplicatedStorage.Shared.Modules.Components.UI.TimerBoard)
+
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Trove = require(ReplicatedStorage.Packages.Trove)
-local SomeFruit = {}
-SomeFruit.__index = SomeFruit
+
+local peek = Fusion.peek
+
+local JumpFruit = {}
+JumpFruit.__index = JumpFruit
 
 type self = {
 	player: Player,
@@ -10,10 +19,10 @@ type self = {
 
 	_trove: Trove.Trove,
 }
-export type SomeFruit = typeof(setmetatable({} :: self, SomeFruit))
+export type JumpFruit = typeof(setmetatable({} :: self, JumpFruit))
 
-function SomeFruit.new(player: Player, tool: Tool): SomeFruit
-	local self = setmetatable({}, SomeFruit) :: SomeFruit
+function JumpFruit.new(player: Player, tool: Tool): JumpFruit
+	local self = setmetatable({}, JumpFruit) :: JumpFruit
 
 	self._trove = Trove.new()
 
@@ -23,11 +32,11 @@ function SomeFruit.new(player: Player, tool: Tool): SomeFruit
 	return self
 end
 
-function SomeFruit.Equipped(self: SomeFruit): () end
+function JumpFruit.Equipped(self: JumpFruit): () end
 
-function SomeFruit.Unequipped(self: SomeFruit): () end
+function JumpFruit.Unequipped(self: JumpFruit): () end
 
-function SomeFruit.Activated(self: SomeFruit, used: () -> ()): ()
+function JumpFruit.Activated(self: JumpFruit, used: () -> ()): ()
 	local char = self.player.Character
 	if not char then
 		return
@@ -43,19 +52,18 @@ function SomeFruit.Activated(self: SomeFruit, used: () -> ()): ()
 	}, char))
 	animatedHighlight:Pulse()
 
-	local startJumpHeight = hum.JumpHeight
-	hum.JumpHeight += 15
+	hum.JumpHeight = StarterPlayer.CharacterJumpHeight + 15
 	used()
 
 	task.delay(15, function()
 		if hum then
-			hum.JumpHeight = startJumpHeight
+			hum.JumpHeight = StarterPlayer.CharacterJumpHeight
 		end
 	end)
 end
 
-function SomeFruit.Destroy(self: SomeFruit): ()
+function JumpFruit.Destroy(self: JumpFruit): ()
 	self._trove:Destroy()
 end
 
-return SomeFruit
+return JumpFruit

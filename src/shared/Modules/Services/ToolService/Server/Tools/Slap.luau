@@ -1,6 +1,6 @@
 local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local SoundService = game:GetService("SoundService")
+local ServerScriptService = game:GetService("ServerScriptService")
 
 local SlapSounds = ReplicatedStorage.Assets.Sounds.SoundEffects.Slap
 local Modules = ReplicatedStorage.Shared.Modules
@@ -14,6 +14,8 @@ local Toucher = require(Modules.Classes.Toucher)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Trove = require(ReplicatedStorage.Packages.Trove)
 local Sound = require(Modules.Classes.Sound)
+
+local Ragdoll = require(ServerScriptService.RagdollModule)
 
 local OnEvent = Fusion.OnEvent
 local scoped, peek = Fusion.scoped, Fusion.peek
@@ -96,22 +98,27 @@ function Slap.new(player: Player, tool: Tool): Slap
 					if not otherHum then
 						return
 					end
+					if otherChar:GetAttribute("Ragdolled") == true then
+						return
+					end
 
 					local delta = otherRoot.Position - root.Position
 
+					local power = tool:GetAttribute("SlapPower") or 1
+
 					local bv = Instance.new("BodyVelocity")
 					bv.maxForce = Vector3.new(1e9, 1e9, 1e9)
-					bv.velocity = (delta.Unit * 40) + Vector3.yAxis * 10
+					bv.velocity = (delta.Unit * (60 * power)) + Vector3.yAxis * (50 * power)
 					bv.Parent = otherRoot
 					Debris:AddItem(bv, 0.05)
 
 					Sound.new(SlapSounds.Slap, otherRoot):Play()
 
-					otherHum.Sit = true
+					Ragdoll.Ragdoll(otherChar, 4)
 				end))
-				self.hitTrove:Add(track.Ended:Once(function()
+				task.delay(0.5, function()
 					self.hitTrove:Clean()
-				end))
+				end)
 
 				track:Play()
 			end

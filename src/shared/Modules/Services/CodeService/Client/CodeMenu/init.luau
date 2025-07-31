@@ -5,6 +5,8 @@ local RunService = game:GetService("RunService")
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Charm = require(ReplicatedStorage.Packages.Charm)
 
+local SomeCode = require(script.Parent.Codes.SomeCode)
+
 local Hydrate, OnChange, Value = Fusion.Hydrate, Fusion.OnChange, Fusion.Value
 
 local atom = Charm.atom
@@ -13,6 +15,7 @@ local function CodeMenu(
 	scope: Fusion.Scope<any>,
 	props: {
 		redeemCodeAttempt: (code: string) -> string,
+		codes: { [string]: SomeCode },
 	}
 )
 	local player = Players.LocalPlayer
@@ -38,9 +41,14 @@ local function CodeMenu(
 		local codeState = code()
 		if codeState ~= "" then
 			lastRedeemAttempt = time()
-			local result = props.redeemCodeAttempt(codeState)
+			local success, result = props.redeemCodeAttempt(codeState)
 			placeholderText:set(result)
 			textBox.Text = ""
+			if success then
+				if props.codes[codeState] then
+					props.codes[codeState]()
+				end
+			end
 		end
 	end)
 

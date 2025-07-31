@@ -21,7 +21,7 @@ local function ShopMenu(scope: Fusion.Scope<any>, props: {})
 	local contents = shopMenuGui:WaitForChild("Main"):WaitForChild("Contents")
 
 	BaseClient.GetBase():andThen(function(base: Base.Base)
-		for _, v: GuiButton? in contents:GetChildren() do
+		for _, v: GuiButton? in contents:GetDescendants() do
 			local id = v:GetAttribute("Id")
 			if id then
 				id = tonumber(id)
@@ -37,8 +37,7 @@ local function ShopMenu(scope: Fusion.Scope<any>, props: {})
 						if checkFullBase and peek(base.isFull) == true then
 							return
 						end
-						MonitizationClient.SetPrompting(id)
-						MarketplaceService:PromptProductPurchase(player, id)
+						MonitizationClient.PromptPurchase(tonumber(id))
 					end)
 				)
 

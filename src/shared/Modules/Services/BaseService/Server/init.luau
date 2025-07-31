@@ -4,13 +4,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Services = ReplicatedStorage.Shared.Modules.Services
 
 local PlayerDataServer = require(Services.PlayerDataService.Server)
+local PopupServer = require(Services.PopupService.Server)
 local IndexServer = require(Services.IndexService.Server)
-
-local SharedSpawningData = require(Services.SpawningService.Data)
 
 local SharedTypes = require(script.Parent.Types)
 local SharedData = require(script.Parent.Data)
-local Events = require(script.Events)
+
+local SharedSpawningData = require(Services.SpawningService.Data)
 
 local Base = require(script.Base)
 
@@ -29,6 +29,25 @@ function BaseServer.GetPlayerBase(player: Player): Base.Base?
 		end
 	end
 	warn(player.Name .. " did not have a base assigned")
+end
+
+function BaseServer.GivePlayerCharacter(player: Player, characterName: string, mutations: { string }?)
+	local SpawningServer = require(Services.SpawningService.Server)
+
+	local playerProfile = PlayerDataServer.GetPlayerProfile(player)
+	if not playerProfile then
+		return
+	end
+	local base = BaseServer.GetPlayerBase(player)
+	if not base then
+		return
+	end
+
+	if peek(base.BaseFull) then
+		SpawningServer.AddCachedSpawnForPlayer(player, characterName)
+	else
+		base:AddCharacter(player, characterName, mutations)
+	end
 end
 
 function BaseServer.init()
@@ -67,7 +86,7 @@ function BaseServer.init()
 			local playerProfileData = PlayerDataServer.GetPlayerProfileData(player)
 			local charactersNotUnlockedNames = {}
 			for i, savedPlatform: SharedTypes.SavedPlatformData in playerProfileData.Platforms do
-				base:AddCharacter(player, savedPlatform.CharacterName, savedPlatform, i)
+				base:AddCharacter(player, savedPlatform.CharacterName, savedPlatform.Mutations, savedPlatform, i)
 
 				if not table.find(playerProfileData.UnlockedCharacters, savedPlatform.CharacterName) then
 					table.insert(charactersNotUnlockedNames, savedPlatform.CharacterName)
@@ -122,14 +141,28 @@ function BaseServer.init()
 		local ownerId = peek(base.Owner)
 		assert(ownerId, "There is no owner at sent base")
 
+		local charData = SharedSpawningData.Characters.Info[peek(platform.CharacterName)]
+
 		if peek(base.Owner) == player.UserId then
 			platform:Sell()
 		else
 			local stealingBase = BaseServer.GetPlayerBase(player)
-			if
-				not peek(stealingBase.BaseFull) and not Players:GetPlayerByUserId(ownerId):GetAttribute("IsInTutorial")
-			then
-				platform:Steal(player)
+			if peek(stealingBase.BaseFull) then
+				PopupServer.SendPopupTo(player, {
+					message = "Your base is full.",
+					gradient = ReplicatedStorage.Assets.Templates.Gui.Gradients.RedApple,
+				})
+				return
+			end
+			if not Players:GetPlayerByUserId(ownerId):GetAttribute("IsInTutorial") then
+				if charData.Stealable == false then
+					PopupServer.SendPopupTo(player, {
+						message = "This character is too sacred...",
+						gradient = ReplicatedStorage.Assets.Templates.Gui.Gradients.Haki.Conquerers,
+					})
+				else
+					platform:Steal(player)
+				end
 			end
 		end
 	end)
@@ -140,7 +173,7 @@ function BaseServer.init()
 		assert(base, "Base model sent did not exist")
 		assert(peek(base.Owner) == player.UserId, player.Name .. " was not the owner of sent base")
 
-		if tick() - peek(base.lastLocked) < peek(base.lockDuration) then
+		if os.time() - peek(base.lastLocked) < peek(base.lockDuration) then
 			return
 		end
 

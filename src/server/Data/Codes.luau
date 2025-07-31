@@ -11,7 +11,7 @@ Codes["FUN"] = {
 	RewardType = "Statistic",
 	ConditionTypes = {},
 
-	Statistics = { ["Beli"] = 5000 },
+	Statistics = { ["Cash"] = 5000 },
 }
 
 return Codes

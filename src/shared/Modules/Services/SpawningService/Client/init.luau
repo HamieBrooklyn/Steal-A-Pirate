@@ -1,7 +1,12 @@
-local LocalizationService = game:GetService("LocalizationService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+
+local Services = ReplicatedStorage.Shared.Modules.Services
+
+local BaseClient = require(Services.BaseService.Client)
+
+local Base = require(Services.BaseService.Client.Base)
 
 local SharedTypes = require(script.Parent.Types)
 local SharedData = require(script.Parent.Data)
@@ -11,9 +16,16 @@ local Spawner = require(script.Spawner)
 
 local Observers = require(ReplicatedStorage.Packages.Observers)
 
+local CachedSpawnsList = require(ReplicatedStorage.Shared.Modules.Services.SpawningService.Client.CachedSpawnsList)
+
 local observeCharacter = require(ReplicatedStorage.Shared.Modules.Utilities.observeCharacter)
+local createTaggedComponent = require(ReplicatedStorage.Shared.Modules.Utilities.createTaggedComponent)
+
 local Streamable = require(ReplicatedStorage.Packages.Streamable).Streamable
 local Net = require(ReplicatedStorage.Packages.Net)
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
+
+local peek = Fusion.peek
 
 local player = Players.LocalPlayer
 
@@ -25,6 +37,8 @@ local SpawningClient = {
 	characterNamesByRarity = {} :: { [string]: { string } },
 	characterNamesByIndex = {} :: { string },
 }
+SpawningClient.getCachedSpawns = Net:RemoteFunction("GetCachedSpawns")
+SpawningClient.spawnCachedPirate = Net:RemoteFunction("SpawnCachedPirate")
 
 function SpawningClient.init()
 	local index = 0
@@ -90,6 +104,36 @@ function SpawningClient.init()
 			v:Heartbeat()
 		end
 	end)
+
+	BaseClient.GetBase():andThen(function(base: Base.Base)
+		local scope: Fusion.Scope = Fusion.scoped(Fusion)
+		local cachedSpawns: Fusion.Value<{ string }> = scope:Value(SpawningClient.getCachedSpawns:InvokeServer() or {})
+		Net:Connect("CachedSpawnsUpdated", function(updatedCachedSpawns: { string })
+			cachedSpawns:set(updatedCachedSpawns)
+		end)
+		local canSpawn = scope:Computed(function(use: Fusion.Use)
+			return not use(base.isFull)
+		end)
+		scope:New("ScreenGui")({
+			Name = "CachedSpawns",
+			Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
+			ResetOnSpawn = false,
+			[Fusion.Children] = CachedSpawnsList(scope, {
+				canSpawn = canSpawn,
+				cachedSpawns = cachedSpawns,
+				spawnAttempt = function(pirateName: string)
+					local success = SpawningClient.spawnCachedPirate:InvokeServer(pirateName)
+					if success then
+						local state = table.clone(peek(cachedSpawns))
+						table.remove(state, table.find(state, pirateName))
+						cachedSpawns:set(state)
+					end
+				end,
+			}),
+		})
+	end)
+
+	createTaggedComponent("PirateInfo", require(script.PirateInfo))
 end
 
 return SpawningClient

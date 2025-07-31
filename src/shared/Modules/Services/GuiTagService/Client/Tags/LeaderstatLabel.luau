@@ -1,6 +1,10 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Services = ReplicatedStorage.Shared.Modules.Services
+
+local PlayerDataClient = require(Services.PlayerDataService.Client)
+
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Trove = require(ReplicatedStorage.Packages.Trove)
 local abbreviateNumber = require(ReplicatedStorage.Shared.Modules.Utilities.abbreviateNumber)
@@ -20,8 +24,6 @@ export type LeaderstatLabel = typeof(setmetatable({} :: self, LeaderstatLabel))
 
 function LeaderstatLabel.new(label: GuiLabel): LeaderstatLabel
 	local self = setmetatable({}, LeaderstatLabel) :: LeaderstatLabel
-
-	local leaderstatsFold: Folder = player:WaitForChild("leaderstats")
 
 	local scope = scoped(Fusion)
 	self._scope = scope
@@ -47,9 +49,17 @@ function LeaderstatLabel.new(label: GuiLabel): LeaderstatLabel
 	local colorSpring: Fusion.Spring<any> = scope:Spring(scope:Value(label.TextColor3), 5, 1)
 
 	local statValue = scope:Value(nil)
-	scope:Observer(statName):onBind(function()
-		statValue:set(leaderstatsFold:WaitForChild(peek(statName)))
-	end)
+	local function set()
+		local leaderstatsFold: Folder = player:WaitForChild("leaderstats")
+		scope:Observer(statName):onBind(function()
+			statValue:set(leaderstatsFold:WaitForChild(peek(statName)))
+		end)
+	end
+	if not PlayerDataClient.loaded then
+		PlayerDataClient.LeaderstatsLoaded:Once(set)
+	else
+		set()
+	end
 
 	local text = scope:Value("")
 	local con: RBXScriptConnection?

@@ -33,7 +33,7 @@ function BuyCharacter.Start(
 	characterName: string
 ): ()
 	self._trove:Add(
-		SpawningServer.spawners[SpawningServer.portalIdsByName[spawnerName]].playerBoughtCharacter:Connect(
+		SpawningServer.spawners[SpawningServer.spawnerIdsByName[spawnerName]].playerBoughtCharacter:Connect(
 			function(playerBought: Player, boughtCharacter: Character.Character)
 				if playerBought == player and boughtCharacter.Character.Name == characterName then
 					finished()

@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Debris = game:GetService("Debris")
+local ServerScriptService = game:GetService("ServerScriptService")
 
 local SoundEffects = ReplicatedStorage.Assets.Sounds.SoundEffects
 
@@ -8,6 +9,8 @@ local BombFruitModel = ReplicatedStorage.Assets.Models.Fruits["Bomb Bomb Fruit"]
 
 local Sound = require(ReplicatedStorage.Shared.Modules.Classes.Sound)
 local Particle = require(ReplicatedStorage.Shared.Modules.Classes.Particle)
+
+local Ragdoll = require(ServerScriptService.RagdollModule)
 
 local BombFruit = {}
 BombFruit.__index = BombFruit
@@ -70,7 +73,9 @@ function BombFruit.Activated(self: BombFruit, used: () -> ()): ()
 		Sound.new(SoundEffects.Explode, p):Play()
 
 		particle.part:PivotTo(p:GetPivot())
-		particle:Emit()
+		particle:Emit(nil, function()
+			particle:Destroy()
+		end)
 
 		model:Destroy()
 
@@ -82,7 +87,7 @@ function BombFruit.Activated(self: BombFruit, used: () -> ()): ()
 			if otherChar then
 				local otherRoot = otherChar.PrimaryPart
 				local otherHum = otherChar:FindFirstChildOfClass("Humanoid")
-				if otherRoot and (otherRoot:GetPivot().Position - model:GetPivot().Position).Magnitude < 20 then
+				if otherRoot and (otherRoot:GetPivot().Position - model:GetPivot().Position).Magnitude < 35 then
 					local delta2 = root:GetPivot().Position - model:GetPivot().Position
 
 					local bv2 = Instance.new("BodyVelocity")
@@ -92,7 +97,7 @@ function BombFruit.Activated(self: BombFruit, used: () -> ()): ()
 					Debris:AddItem(bv2, 0.05)
 
 					if otherHum then
-						otherHum.Sit = true
+						Ragdoll.Ragdoll(otherChar, 4)
 					end
 				end
 			end

@@ -34,7 +34,7 @@ end
 function PlayerDataServer.UpdateLeaderstat(player: Player, statName: string, amount: number)
 	local profile = PlayerDataServer.GetPlayerProfile(player)
 	if profile then
-		profile.Data.Leaderstats[statName] += amount
+		profile.Data.Leaderstats[statName] += math.floor(amount)
 		player:FindFirstChild("leaderstats"):FindFirstChild(statName).Value += amount
 	end
 end
@@ -47,7 +47,7 @@ function PlayerDataServer.SetLeaderstat(player: Player, statName: string, value:
 end
 
 function PlayerDataServer.init(): ()
-	local PlayerStore = ProfileStore.New("PlayerStore_V0.1", SharedData.Template)
+	local PlayerStore = ProfileStore.New("PlayerStore_V0.7", SharedData.Template)
 	local Profiles: { [Player]: typeof(PlayerStore:StartSessionAsync()) } = {}
 	PlayerDataServer.Profiles = Profiles
 

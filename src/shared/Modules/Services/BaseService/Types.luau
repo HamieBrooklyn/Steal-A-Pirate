@@ -3,6 +3,7 @@ local BaseTypes = {}
 export type SavedPlatformData = {
 	CharacterName: string,
 	LastCollectedTime: number,
+	Mutations: { string }?,
 }
 
 export type PlatformIdData = {

@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local Services = ReplicatedStorage.Shared.Modules.Services
 
 local PlayerDataServer = require(Services.PlayerDataService.Server)
+local SpawningServer = require(Services.SpawningService.Server)
 local PopupServer = require(Services.PopupService.Server)
 
 local Quest = require(script.Quest)
@@ -19,6 +20,7 @@ local questSteps = {} :: { [string]: Step.Step }
 
 local QuestServer = {
 	playerQuests = {} :: { Quest.Quest },
+	beginnerPlayers = {} :: { Player },
 }
 
 function QuestServer.StartQuest(player: Player, questName: string): Quest.Quest?
@@ -54,6 +56,9 @@ function QuestServer.init()
 	PlayerDataServer.PlayerProfileLoaded:Connect(function(player: Player)
 		local playerProfile = PlayerDataServer.GetPlayerProfile(player)
 		if not table.find(playerProfile.Data.CompletedQuests, "Tutorial") then
+			SpawningServer.AddGuaranteedCharacterToSpawner("Main Portals", "Weak Loafy")
+			table.insert(QuestServer.beginnerPlayers, player)
+
 			local quest = QuestServer.StartQuest(player, "Tutorial")
 			if quest then
 				quest
@@ -61,7 +66,6 @@ function QuestServer.init()
 						stepName = "BuyCharacter",
 						texts = { ["Main"] = "Follow the arrows and recruit your first pirate" },
 						finished = function()
-							print("here1")
 							AnalyticsService:LogFunnelStepEvent(
 								player,
 								"Tutorial",
@@ -75,7 +79,6 @@ function QuestServer.init()
 						stepName = "GetCharacterToBase",
 						texts = { ["Main"] = "Wait for the pirate to reach your base" },
 						finished = function()
-							print("here2")
 							AnalyticsService:LogFunnelStepEvent(
 								player,
 								"Tutorial",
@@ -89,7 +92,6 @@ function QuestServer.init()
 						stepName = "CollectPlatform",
 						texts = { ["Main"] = "Collect cash earned by your pirate" },
 						finished = function()
-							print("here3")
 							AnalyticsService:LogFunnelStepEvent(
 								player,
 								"Tutorial",
@@ -103,7 +105,6 @@ function QuestServer.init()
 						stepName = "TimedMessage",
 						texts = { ["Main"] = "Steal pirates from other players! Good luck!" },
 						finished = function()
-							print("here4")
 							AnalyticsService:LogFunnelStepEvent(
 								player,
 								"Tutorial",
@@ -114,7 +115,6 @@ function QuestServer.init()
 						end,
 					}, 3)
 					:Start(function()
-						print("here5")
 						AnalyticsService:LogFunnelStepEvent(
 							player,
 							"Tutorial",
@@ -128,9 +128,12 @@ function QuestServer.init()
 	end)
 	Players.PlayerRemoving:Connect(function(player: Player)
 		if QuestServer.playerQuests[player.UserId] then
-			print(QuestServer.playerQuests[player.UserId])
 			QuestServer.playerQuests[player.UserId]:Cleanup()
 			QuestServer.playerQuests[player.UserId] = nil
+		end
+		local i = table.find(QuestServer.beginnerPlayers, player)
+		if i then
+			table.remove(QuestServer.beginnerPlayers, i)
 		end
 	end)
 end

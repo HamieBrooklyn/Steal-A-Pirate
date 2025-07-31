@@ -4,6 +4,8 @@ local Services = ReplicatedStorage.Shared.Modules.Services
 
 local SpawningClient = require(Services.SpawningService.Client)
 
+local SharedSpawningData = require(Services.SpawningService.Data)
+
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Packages.Net)
 
@@ -11,6 +13,7 @@ local Value = Fusion.Value
 local scoped, peek = Fusion.scoped, Fusion.peek
 
 local IndexClient = {}
+IndexClient.displayCharacterAttempt = Net:RemoteEvent("DisplayCharacterAttempt")
 
 function IndexClient.init()
 	local scope = scoped(Fusion, {
@@ -20,6 +23,9 @@ function IndexClient.init()
 
 	local nonUnlockedCharacters = {}
 	for _, v in SpawningClient.characterNamesByIndex do
+		if SharedSpawningData.Characters.Info[v].Natural == false then
+			continue
+		end
 		nonUnlockedCharacters[v] = false
 	end
 	IndexClient.unlockedCharacterNames = Value(scope, nonUnlockedCharacters) :: Fusion.Value<{ [string]: boolean }, any>
@@ -37,6 +43,10 @@ function IndexClient.init()
 	scope:IndexMenu({
 		unlockedCharacterNames = IndexClient.unlockedCharacterNames,
 		charactersUnlockedCount = charactersUnlockedCount,
+
+		putOnDisplayAttempt = function(pirateName: string)
+			IndexClient.displayCharacterAttempt:FireServer(pirateName)
+		end,
 	})
 end
 

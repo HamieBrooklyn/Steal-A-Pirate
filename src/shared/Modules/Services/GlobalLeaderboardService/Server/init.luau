@@ -40,9 +40,7 @@ function GlobalLeaderboardServer.init()
 		if time() - lastUpdate > SharedData.UpdateInterval then
 			lastUpdate = time()
 			for _, v in GlobalLeaderboardServer.globalLeaderboards do
-				v:Update(function(list)
-					GlobalLeaderboardServer.globalLeaderboardUpdated:FireAllClients(v.id, list)
-				end)
+				GlobalLeaderboardServer.globalLeaderboardUpdated:FireAllClients(v.id, v:Update())
 				--task.wait(SharedData.UpdateInterval / GlobalLeaderboardServer.globalLeaderboardsCount)
 			end
 		end

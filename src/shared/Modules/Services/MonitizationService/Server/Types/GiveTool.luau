@@ -10,7 +10,7 @@ local function GiveTool(player: Player, wasPurchased: boolean, data: SharedTypes
 	if wasPurchased then
 		local tools: { [string]: { Amount: number, Permanent: boolean, SaveOnDeath: boolean } } = data.Values[index]
 		for i, v in tools do
-			ToolServer.GivePlayerTool(player, i, v.Amount, v.SaveOnDeath, v.Permanent)
+			ToolServer.GivePlayerTool(player, i, v.Amount, true, true)
 		end
 	end
 end

@@ -25,10 +25,16 @@ function CodeClient.init()
 		FreeTimedCharacter = FreeTimedCharacter,
 	})
 
+	local codes = {}
+	for _, v in script.Codes:GetChildren() do
+		codes[v.Name] = require(v)
+	end
+
 	scope:CodeMenu({
 		redeemCodeAttempt = function(code: string)
 			return CodeClient.redeemCodeAttempt:InvokeServer(code)
 		end,
+		codes = codes,
 	})
 
 	local hasntClaimedFreeCharacter = Value(scope, false)
@@ -37,7 +43,8 @@ function CodeClient.init()
 			hasntClaimedFreeCharacter:set(false)
 		end
 	end)
-	Net:Connect("ProfileLoaded", function()
+
+	local function load()
 		scope:FreeTimedCharacter({
 			firstSessionTime = tonumber(PlayerDataClient.getFirstSessionTime:InvokeServer()),
 			hasntClaimed = hasntClaimedFreeCharacter,
@@ -48,7 +55,11 @@ function CodeClient.init()
 			end
 		end
 		hasntClaimedFreeCharacter:set(true)
-	end)
+	end
+	if Players.LocalPlayer:GetAttribute("ProfileLoaded") then
+		load()
+	end
+	Net:Connect("ProfileLoaded", load)
 end
 
 return CodeClient

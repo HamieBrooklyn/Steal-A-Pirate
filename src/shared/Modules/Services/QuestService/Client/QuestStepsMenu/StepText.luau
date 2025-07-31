@@ -19,7 +19,7 @@ local function StepText(
 		anchorPoint = Vector2.new(0.5, 1),
 		position = scope:Spring(
 			scope:Computed(function(use)
-				return use(props.shown) and UDim2.fromScale(0.5, 0.23) or UDim2.fromScale(0.5, 0.1)
+				return use(props.shown) and UDim2.fromScale(0.5, 0.3) or UDim2.fromScale(0.5, 0.1)
 			end),
 			15,
 			0.7

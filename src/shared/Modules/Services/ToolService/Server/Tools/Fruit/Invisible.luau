@@ -22,9 +22,10 @@ function InvisibleFruit.Unequipped(self: InvisibleFruit): () end
 
 function InvisibleFruit.Activated(self: InvisibleFruit, used: () -> ()): ()
 	local char = self.player.Character
-	if not char then
+	if not char or char:GetAttribute("Invisible") then
 		return
 	end
+	char:SetAttribute("Invisible", true)
 	used()
 
 	local parts: { [Instance]: number } = {}
@@ -34,12 +35,15 @@ function InvisibleFruit.Activated(self: InvisibleFruit, used: () -> ()): ()
 			p.Transparency = 0.97
 		end
 	end
+	char:FindFirstChildOfClass("Humanoid").NameDisplayDistance = Enum.HumanoidDisplayDistanceType.None
 
 	task.delay(15, function()
 		if char then
 			for i, v in parts do
 				i.Transparency = v
 			end
+			char:SetAttribute("Invisible", false)
+			char:FindFirstChildOfClass("Humanoid").NameDisplayDistance = Enum.HumanoidDisplayDistanceType.Viewer
 		end
 	end)
 end

@@ -8,26 +8,86 @@ export type ShopToolData = {
 	Title: string?,
 	Description: string?,
 	Image: string?,
+	GetType: string,
+	Upgrades: string?,
 
-	BeliCost: number,
+	RequiresUnlock: boolean?,
+	UnlockText: string?,
+
+	CashCost: number,
 	RebirthsRequired: number,
 	Limit: number,
+	PassId: number?,
 
 	TitleGradient: UIGradient?,
 	DescriptionGradient: UIGradient?,
 }
 
+export type ToolUpgrade = {
+	Level: number,
+	ToolName: string,
+}
+
 local SharedToolData = {}
 
+SharedToolData.StarterTool = "Slap"
+
+SharedToolData.MaxOfOneFloorItem = 5
+SharedToolData.FloorItemsRemoveDuration = 120
+
+SharedToolData.UpgradeableTools = {
+	["Slap"] = {
+		{
+			Level = 1,
+			ToolName = "Slap",
+		},
+		{
+			Level = 2,
+			ToolName = "Stone Slap",
+		},
+		{
+			Level = 3,
+			ToolName = "Conquerer Slap",
+		},
+		{
+			Level = 4,
+			ToolName = "Mud Slap",
+		},
+		{
+			Level = 5,
+			ToolName = "Grandfather Slap",
+		},
+	},
+} :: { [string]: { ToolUpgrade } }
+
 SharedToolData.ShopTools = {
+	["Slap"] = {
+		Order = 1,
+
+		Title = "Slap",
+		Description = "WHABAM!",
+		Image = "rbxassetid://86977509832676",
+		GetType = "Stock",
+		Upgrades = "Slap",
+
+		OwnByDefault = true,
+
+		CashCost = 0,
+		RebirthsRequired = 0,
+		Limit = 1,
+
+		TitleGradient = Gradients.Rock,
+		DescriptionGradient = Gradients.Rock,
+	},
 	["Banana"] = {
 		Order = 1,
 
 		Title = "Banana",
-		Description = "The classic slip-and-fall trap. Drop a banana peel to make any player who steps on it slip.",
+		Description = "FALL.",
 		Image = "rbxassetid://83989247926383",
+		GetType = "Stock",
 
-		BeliCost = 500,
+		CashCost = 500,
 		RebirthsRequired = 0,
 		Limit = 5,
 
@@ -40,8 +100,10 @@ SharedToolData.ShopTools = {
 		Title = "Stone Slap",
 		Description = "SLAM! BOOM! POW!",
 		Image = "rbxassetid://108340787857009",
+		GetType = "Stock",
+		Upgrades = "Slap",
 
-		BeliCost = 2500,
+		CashCost = 2500,
 		RebirthsRequired = 1,
 		Limit = 1,
 
@@ -52,10 +114,11 @@ SharedToolData.ShopTools = {
 		Order = 3,
 
 		Title = "Jump Jump Fruit",
-		Description = "Jump higher than ever before",
+		Description = "Jump higher than EVER before",
 		Image = "rbxassetid://74579165571055",
+		GetType = "Stock",
 
-		BeliCost = 10_000,
+		CashCost = 10_000,
 		RebirthsRequired = 2,
 		Limit = 3,
 
@@ -68,8 +131,9 @@ SharedToolData.ShopTools = {
 		Title = "Speed Speed Fruit",
 		Description = "Makes you go vroooooom",
 		Image = "rbxassetid://95440524456415",
+		GetType = "Stock",
 
-		BeliCost = 15_000,
+		CashCost = 15_000,
 		RebirthsRequired = 2,
 		Limit = 3,
 
@@ -82,8 +146,9 @@ SharedToolData.ShopTools = {
 		Title = "Freeze Ray",
 		Description = "Makes someone feel really cold",
 		Image = "rbxassetid://103518905443465",
+		GetType = "Stock",
 
-		BeliCost = 500,
+		CashCost = 500,
 		RebirthsRequired = 3,
 		Limit = 1,
 
@@ -96,8 +161,9 @@ SharedToolData.ShopTools = {
 		Title = "Bear Trap",
 		Description = "Secure your base... or dont.",
 		Image = "rbxassetid://134930545845280",
+		GetType = "Stock",
 
-		BeliCost = 30_000,
+		CashCost = 30_000,
 		RebirthsRequired = 4,
 		Limit = 5,
 
@@ -108,10 +174,11 @@ SharedToolData.ShopTools = {
 		Order = 7,
 
 		Title = "Invis Invis Fruit",
-		Description = "Become nothing",
+		Description = "Become. nothing.",
 		Image = "rbxassetid://139267520805922",
+		GetType = "Stock",
 
-		BeliCost = 50_000,
+		CashCost = 50_000,
 		RebirthsRequired = 5,
 		Limit = 1,
 
@@ -124,8 +191,10 @@ SharedToolData.ShopTools = {
 		Title = "Conquerer Slap",
 		Description = "Use this against whom you hate the most. Or anyone.",
 		Image = "rbxassetid://102671111201439",
+		GetType = "Stock",
+		Upgrades = "Slap",
 
-		BeliCost = 75_000,
+		CashCost = 75_000,
 		RebirthsRequired = 6,
 		Limit = 1,
 
@@ -138,8 +207,9 @@ SharedToolData.ShopTools = {
 		Title = "Bomb Bomb Fruit",
 		Description = "Pretty self explanitory.",
 		Image = "rbxassetid://106562489126717",
+		GetType = "Stock",
 
-		BeliCost = 90_000,
+		CashCost = 90_000,
 		RebirthsRequired = 7,
 		Limit = 3,
 
@@ -152,13 +222,72 @@ SharedToolData.ShopTools = {
 		Title = "Unlock Unlock Fruit",
 		Description = "😈",
 		Image = "rbxassetid://106844447244222",
+		GetType = "Stock",
 
-		BeliCost = 150_000,
+		CashCost = 150_000,
 		RebirthsRequired = 8,
 		Limit = 3,
 
 		TitleGradient = Gradients.Ice,
 		DescriptionGradient = Gradients.Rock,
+	},
+	["Mud Slap"] = {
+		Order = 11,
+
+		Title = "Mud Slap",
+		Description = "WHABAM!",
+		Image = "rbxassetid://95369015028669",
+		GetType = "Stock",
+		Upgrades = "Slap",
+
+		RequiresUnlock = true,
+		UnlockText = "Unlock!",
+		PassId = 1340759475,
+
+		CashCost = 0,
+		RebirthsRequired = 0,
+		Limit = 1,
+
+		TitleGradient = Gradients.Rock,
+		DescriptionGradient = Gradients.Rock,
+	},
+	["FlyingCarpet"] = {
+		Order = 12,
+
+		Title = "Flying Carpet",
+		Description = "Now this is overpowered...",
+		Image = "",
+		GetType = "Stock",
+
+		RequiresUnlock = true,
+		UnlockText = "Unlock!",
+		PassId = 1319317896,
+
+		CashCost = 0,
+		RebirthsRequired = 0,
+		Limit = 1,
+
+		TitleGradient = Gradients.RedApple,
+		DescriptionGradient = Gradients.RedApple,
+	},
+	["Grandfather Slap"] = {
+		Order = 13,
+
+		Title = "Grandfather Slap",
+		Description = "WHABAM!",
+		Image = "rbxassetid://93283912524413",
+		GetType = "Stock",
+		Upgrades = "Slap",
+
+		RequiresUnlock = true,
+		UnlockText = "Not unlocked",
+
+		CashCost = 0,
+		RebirthsRequired = 0,
+		Limit = 1,
+
+		TitleGradient = Gradients.Banana,
+		DescriptionGradient = Gradients.Banana,
 	},
 } :: { ShopToolData }
 

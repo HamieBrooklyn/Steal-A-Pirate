@@ -1,6 +1,7 @@
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Services = ReplicatedStorage.Shared.Modules.Services
 local Characters = ReplicatedStorage.Assets.Models.Characters
@@ -9,9 +10,11 @@ local PirateInteractPrompt = ReplicatedStorage.Assets.Templates.PirateInteract
 
 local MonitizationServer = require(Services.MonitizationService.Server)
 local PlayerDataServer = require(Services.PlayerDataService.Server)
-local SharedRebirthData = require(Services.RebirthService.Data)
 local SettingsServer = require(Services.SettingsService.Server)
 local PlayerServer = require(Services.PlayerService.Server)
+
+local SharedSpawningData = require(Services.SpawningService.Data)
+local SharedRebirthData = require(Services.RebirthService.Data)
 
 local SharedSpawningTypes = require(ReplicatedStorage.Shared.Modules.Services.SpawningService.Types)
 
@@ -20,6 +23,9 @@ local Signal = require(ReplicatedStorage.Packages.Signal)
 local Trove = require(ReplicatedStorage.Packages.Trove)
 local Events = require(script.Parent.Parent.Events)
 local observeDescendants = require(ReplicatedStorage.Shared.Modules.Utilities.observeDescendants)
+local glueCharacterToCurrentPosition =
+	require(ReplicatedStorage.Shared.Modules.Utilities.glueCharacterToCurrentPosition)
+local getMutationsString = require(ReplicatedStorage.Shared.Modules.Utilities.getMutationsString)
 
 local scoped, peek = Fusion.scoped, Fusion.peek
 
@@ -45,7 +51,9 @@ type self = {
 
 	CharacterData: Fusion.Value<SharedSpawningTypes.CharacterData?, any>,
 	CharacterName: Fusion.Value<string?, any>,
+	Mutations: Fusion.Value<{ string }, any>,
 	characterModel: Fusion.Value<Model?, any>,
+	characterCFrame: CFrame?,
 
 	LastCollected: number,
 
@@ -91,6 +99,7 @@ function Platform.new(
 
 	self.CharacterData = scope:Value(props.startData)
 	self.CharacterName = scope:Value(props.startName)
+	self.Mutations = scope:Value({})
 	self.isOccupied = scope:Value(peek(self.CharacterData) and peek(self.CharacterName))
 	self.characterModel = scope:Value(nil)
 
@@ -105,55 +114,117 @@ function Platform.new(
 	scope:Observer(self.CharacterData):onBind(function()
 		characterTrove:Clean()
 
+		local name = peek(self.CharacterName)
+
 		local state = peek(self.CharacterData)
 		if not state then
 			return
 		else
 			self.LastCollected = self.LastCollected or os.time()
+			local mutations = peek(self.Mutations)
 			Events.PlatformCharactersSetQueue:Add({
 				baseId = self.BaseId,
 				platformId = self.Id,
 
-				characterName = peek(self.CharacterName),
+				characterName = name,
 				lastCollectedTime = self.LastCollected,
+				mutations = if #mutations > 0 then mutations else nil,
 			})
 		end
 
-		local charModel: Model = Characters:FindFirstChild(peek(self.CharacterName)):Clone()
+		local charModel: Model = Characters:FindFirstChild(name):Clone()
+		for _, v: BasePart? in charModel:GetDescendants() do
+			if v:IsA("BasePart") then
+				v.AssemblyLinearVelocity = Vector3.zero
+			end
+		end
 		characterTrove:Add(charModel)
 		characterTrove:Add(observeDescendants(charModel, function(descendant)
 			if descendant:IsA("BasePart") then
 				descendant.CollisionGroup = "Pirate"
 			end
 		end))
+		charModel:SetAttribute("PirateName", name)
+		charModel:AddTag("PirateInfo")
 
-		charModel:PivotTo(model:FindFirstChild("Placement"):GetPivot() * CFrame.new(0, 5, 0))
+		local hum = charModel:FindFirstChildOfClass("Humanoid")
+		hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
+		hum:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, true)
+
+		local mutationsState = peek(self.Mutations)
+		if #mutationsState > 0 then
+			local mString = getMutationsString(mutationsState)
+			charModel:SetAttribute("Mutations", mString)
+			charModel:AddTag("Mutated")
+		end
+
+		ReplicatedStorage.Assets.Templates.Animate:Clone().Parent = charModel
+		charModel:PivotTo(
+			model:FindFirstChild("Placement"):GetPivot() * CFrame.new(0, charModel:GetExtentsSize().Y / 2, 0)
+		)
 		charModel.Parent = model
-		self.characterModel:set(model)
+
+		task.delay(0.05, function()
+			local landCon: RBXScriptConnection
+			landCon = characterTrove:Add(RunService.Heartbeat:Connect(function()
+				if hum.FloorMaterial ~= Enum.Material.Air then
+					self.characterCFrame = charModel:GetPivot()
+					self.trove:Add(glueCharacterToCurrentPosition(charModel))
+					landCon:Disconnect()
+				end
+			end))
+		end)
+
+		self.characterModel:set(charModel)
 	end)
 
 	return self
 end
 
+function Platform.GetMultiplier(self: Platform): number
+	local mult = 0
+	local ownerUserId = peek(self.Owner)
+	if
+		ownerUserId
+		and MonitizationServer.playerGamepasses[ownerUserId]
+		and MonitizationServer.playerGamepasses[ownerUserId]["2XMoney"] == true
+	then
+		mult += 2
+	end
+
+	for _, v in peek(self.Mutations) do
+		mult += SharedSpawningData.Mutations[v].Mult
+	end
+
+	local playerProfile = PlayerDataServer.GetPlayerProfile(Players:GetPlayerByUserId(peek(self.Owner)))
+
+	mult += peek(SharedRebirthData.Constants.CashMultiplier * peek(playerProfile.Data.Leaderstats.Rebirths))
+
+	if mult < 1 then
+		mult += 1
+	end
+
+	return mult
+end
+
 function Platform.LoadGenerated(self: Platform)
-	local generated = math.floor((os.time() - self.LastCollected) * peek(self.CharacterData).Cashflow)
+	local generated =
+		math.floor((os.time() - self.LastCollected) * (peek(self.CharacterData).Cashflow * self:GetMultiplier()))
 	self.Generated:set(generated)
 end
 
 function Platform.Heartbeat(self: Platform)
 	local data: SharedSpawningTypes.CharacterData = peek(self.CharacterData)
 	if data then
-		local mult = 0
+		local mult = self:GetMultiplier()
 		local ownerUserId = peek(self.Owner)
-		if
-			ownerUserId
-			and MonitizationServer.playerGamepasses[ownerUserId]
-			and MonitizationServer.playerGamepasses[ownerUserId]["2XMoney"] == true
-		then
-			mult += 2
+		local playerData = PlayerServer.players[tostring(ownerUserId)]
+		if playerData and (playerData.FriendBoostMult() - 1) > 0 then
+			mult += (playerData.FriendBoostMult() - 1)
 		end
+		-- print(mult)
 
-		local generated = math.floor(peek(self.Generated) + (data.Cashflow * math.max(mult, 1)))
+		local generated = math.floor(peek(self.Generated) + (data.Cashflow * mult))
 		if
 			ownerUserId
 			and SettingsServer.playerSettings[ownerUserId]
@@ -166,6 +237,11 @@ function Platform.Heartbeat(self: Platform)
 			end
 		else
 			self.Generated:set(generated)
+		end
+
+		local charModelState: Model? = peek(self.characterModel)
+		if charModelState and self.characterCFrame then
+			charModelState:PivotTo(self.characterCFrame)
 		end
 	end
 end
@@ -180,10 +256,8 @@ function Platform.GivePlayerEarnings(self: Platform, generated: number)
 		warn(player.Name .. "'s profile hasnt loaded yet")
 		return
 	end
-	local earnings = math.floor(
-		generated * math.max((SharedRebirthData.Constants.BeliMultiplier * profile.Data.Leaderstats.Rebirths), 1)
-	)
-	PlayerDataServer.UpdateLeaderstat(player, "Beli", earnings)
+	local earnings = math.floor(generated * math.max(self:GetMultiplier(), 1))
+	PlayerDataServer.UpdateLeaderstat(player, "Cash", earnings)
 	PlayerDataServer.GetPlayerProfileData(player).TotalEarnings += earnings
 end
 
@@ -225,7 +299,6 @@ local function characterInteractIsValid(self: Platform, char: Model): boolean
 	if not hum or hum.Health < 1 then
 		return false
 	end
-
 	local characterModel: Model = peek(self.characterModel)
 	if not characterModel then
 		return false
@@ -235,7 +308,8 @@ local function characterInteractIsValid(self: Platform, char: Model): boolean
 
 	local origin = char:GetPivot().Position
 	local dir = characterModel:GetPivot().Position - origin
-	local result: RaycastResult? = workspace:Raycast(origin, dir * PirateInteractPrompt.MaxActivationDistance, params)
+	local result: RaycastResult? =
+		workspace:Raycast(origin, dir * (PirateInteractPrompt.MaxActivationDistance * 15), params)
 
 	if not result or not result.Instance or not result.Instance:IsDescendantOf(characterModel) then
 		return false
@@ -266,8 +340,8 @@ function Platform.Sell(self: Platform)
 		return
 	end
 
-	local earnings = peek(self.CharacterData).Price
-	PlayerDataServer.UpdateLeaderstat(player, "Beli", earnings)
+	local earnings = math.floor(peek(self.CharacterData).Price / 2)
+	PlayerDataServer.UpdateLeaderstat(player, "Cash", earnings)
 	PlayerDataServer.GetPlayerProfileData(player).TotalEarnings += earnings
 
 	self:Collect()
@@ -299,7 +373,7 @@ function Platform.Steal(self: Platform, playerStealing: Player)
 	profile.Data.Platforms[tonumber(self.Model.Name)] = nil
 	self.stolen:Fire()
 
-	stealing:StealCharacter(player, peek(self.CharacterName))
+	stealing:StealCharacter(player, peek(self.CharacterName), peek(self.Mutations))
 
 	self.CharacterData:set(nil)
 	self.CharacterName:set(nil)
@@ -320,18 +394,16 @@ function Platform.Reset(self: Platform, removeFromSave: boolean)
 
 	self.WasReset:Fire()
 
-	local charName = peek(self.CharacterName)
-	if charName then
-		Events.platformsResetTask:Add({
-			baseId = self.BaseId,
-			platformId = self.Id,
-		})
-	end
+	Events.platformsResetTask:Add({
+		baseId = self.BaseId,
+		platformId = self.Id,
+	})
 
 	self.Generated:set(0)
 	self.LastCollected = nil
 	self.CharacterData:set(nil)
 	self.CharacterName:set(nil)
+	self.Mutations:set({})
 	self._characterTrove:Clean()
 end
 

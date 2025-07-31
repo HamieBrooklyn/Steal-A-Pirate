@@ -10,7 +10,7 @@ local function Leaderstat(player: Player, wasPurchased: boolean, data: SharedTyp
 	local playerProfile = PlayerDataServer.GetPlayerProfile(player)
 	if wasPurchased and playerProfile then
 		for i, v in data.StatNames do
-			PlayerDataServer.UpdateLeaderstat(player, v, data.Amounts[i])
+			PlayerDataServer.UpdateLeaderstat(player, v, math.floor(data.Amounts[i]))
 		end
 	end
 end

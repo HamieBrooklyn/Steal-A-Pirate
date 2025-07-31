@@ -4,23 +4,28 @@ local SharedBaseTypes = require(ReplicatedStorage.Shared.Modules.Services.BaseSe
 
 export type SavedTool = {
 	Amount: number,
-	SaveOnDeath: boolean?,
+	Equipped: boolean,
 }
 export type PlayerDataTemplate = {
 	Leaderstats: {
-		Beli: number,
+		Cash: number,
 		Rebirths: number,
+		Steals: number,
 	},
 	UnlockedCharacters: { string },
 	CompletedQuests: { string },
 	CodesRedeemed: { string },
+	CachedSpawns: { string },
 	Platforms: { SharedBaseTypes.SavedPlatformData },
 	Tools: { [string]: { Amount: number, SaveOnDeath: boolean? } },
 
+	PirateOnDisplay: string?,
+
 	RebirthSeed: number,
 
-	Steals: number,
 	Spins: number,
+	SpinsClaimedDate: string,
+
 	TotalDonations: number,
 	TotalEarnings: number,
 }
@@ -29,16 +34,21 @@ local PlayerData = {}
 
 PlayerData.Template = {
 	Leaderstats = {
-		Beli = 0,
+		Cash = 0,
 		Rebirths = 0,
+		Steals = 0,
 	},
 	UnlockedCharacters = {},
 	CompletedQuests = {},
 	CodesRedeemed = {},
+	CachedSpawns = {},
 	Platforms = {},
 	Tools = {},
 
 	RebirthSeed = 0,
+
+	Spins = 0,
+	SpinsClaimedDate = "",
 
 	Steals = 0,
 	TotalDonations = 0,

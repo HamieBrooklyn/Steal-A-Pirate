@@ -15,6 +15,7 @@ local function InteractButton(
 
 		clicked: (() -> ())?,
 
+		interactable: UsedAs<boolean>,
 		animated: UsedAs<Instance>,
 	}
 ): Fusion.Child
@@ -22,6 +23,8 @@ local function InteractButton(
 		AnchorPoint = props.anchorPoint,
 		Position = props.position,
 		Size = props.size,
+
+		Interactable = props.interactable,
 
 		Image = "",
 

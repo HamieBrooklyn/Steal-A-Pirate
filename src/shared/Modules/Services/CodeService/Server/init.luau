@@ -31,20 +31,20 @@ function CodeServer.init()
 		assert(code and typeof(code) == "string", "Sent code was not of type string")
 
 		if not player:IsInGroup(36075879) then
-			return "Please join the group to enter codes!"
+			return false, "Please join the group to enter codes!"
 		end
 
 		local codeData: Types.CodeData = Codes[code]
 		if not codeData then
-			return "This is not a valid code"
+			return false, "This is not a valid code"
 		end
 
 		local profile = PlayerDataServer.GetPlayerProfile(player)
 		if not profile then
-			return "Your data has not synced, try waiting or rejoining."
+			return false, "Your data has not synced, try waiting or rejoining."
 		end
 		if table.find(profile.Data.CodesRedeemed, code) then
-			return "You already used this code"
+			return false, "You already used this code"
 		end
 
 		local codeConditionTypes = codeData.ConditionTypes
@@ -52,7 +52,7 @@ function CodeServer.init()
 			for _, v in codeConditionTypes do
 				local success, message = conditionTypes[v](player, codeData, code)
 				if not success then
-					return message
+					return false, message
 				end
 			end
 		end
@@ -63,11 +63,11 @@ function CodeServer.init()
 			if success then
 				table.insert(profile.Data.CodesRedeemed, code)
 				CodeServer.CodeRedeemed:FireClient(player, code, message)
-				return message
+				return true, message
 			end
 		end
 
-		return "Something went wrong"
+		return false, "Something went wrong"
 	end)
 end
 

@@ -52,6 +52,8 @@ local function RankFrame(
 	Label(frame:WaitForChild("Name"), props.name)
 	Label(frame:WaitForChild("Score"), props.score)
 
+	frame:WaitForChild("Photo").Image = props.image
+
 	frame.LayoutOrder = props.order
 
 	return frame

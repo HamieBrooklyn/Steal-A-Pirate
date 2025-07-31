@@ -2,6 +2,7 @@ local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
+local StarterPlayer = game:GetService("StarterPlayer")
 
 local LasersModelTemp = ReplicatedStorage.Assets.Models.Lasers
 local BaseUnlockPrompt = ReplicatedStorage.Assets.Templates.BaseUnlock
@@ -27,17 +28,19 @@ local Platform = require(script.Platform)
 
 local observeCharacter = require(ReplicatedStorage.Shared.Modules.Utilities.observeCharacter)
 local observeDescendants = require(ReplicatedStorage.Shared.Modules.Utilities.observeDescendants)
-local Toucher = require(ReplicatedStorage.Shared.Modules.Classes.Toucher)
 local Sound = require(ReplicatedStorage.Shared.Modules.Classes.Sound)
+local VolumeWatcher = require(ReplicatedStorage.Shared.Modules.Classes.VolumeWatcher)
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Trove = require(ReplicatedStorage.Packages.Trove)
 local Net = require(ReplicatedStorage.Packages.Net)
-local Zoneplus = require(ReplicatedStorage.Packages.Zoneplus)
+local Charm = require(ReplicatedStorage.Packages.Charm)
 
 local Observer = Fusion.Observer
 local scoped, peek = Fusion.scoped, Fusion.peek
+
+local atom, subscribe = Charm.atom, Charm.subscribe
 
 local baseFull = Net:RemoteEvent("BaseIsFull")
 
@@ -55,11 +58,15 @@ type self = {
 	Model: Model,
 	Platforms: { [string]: Platform.Platform },
 	platformsByIndex: { [number]: Platform.Platform },
+	platformsBeingStolen: Fusion.Value<number>,
 
 	unlockPrompt: ProximityPrompt,
 
 	Owner: Fusion.Value<number?, any>,
 	player: Fusion.Value<Player?, any>,
+
+	pirateOnDisplay: Charm.Atom<string?>,
+	displayModel: Model?,
 
 	CharactersInBase: Fusion.Value<{ SharedSpawningTypes.CharacterData }, any>,
 	CharactersAdding: Fusion.Value<{ Character.Character }, any>,
@@ -146,11 +153,75 @@ function Base.new(model: Model): Base
 			end))
 		end
 	end)
+	self.pirateOnDisplay = Charm.atom()
+	subscribe(self.pirateOnDisplay, function(state)
+		if self.displayModel then
+			print(self.displayModel)
+			self.displayModel:Destroy()
+		end
+		if state == nil then
+			return
+		end
+
+		local displayModel = ReplicatedStorage.Assets.Models.Characters:FindFirstChild(state)
+		if displayModel then
+			displayModel = displayModel:Clone() :: Model
+			local entrance: BasePart = self.Model:FindFirstChild("Entrance")
+			displayModel:PivotTo(entrance:GetPivot() * CFrame.new(0, entrance.Size.Y / 2, 0))
+			displayModel.Parent = self.Model
+			for _, v in displayModel:GetDescendants() do
+				if v:IsA("BasePart") then
+					v.CollisionGroup = "Pirate"
+				end
+			end
+
+			local hum = displayModel:FindFirstChildOfClass("Humanoid")
+			local animator = hum:FindFirstChildOfClass("Animator") or Instance.new("Animator")
+			animator.Parent = hum
+
+			local track = animator:LoadAnimation(ReplicatedStorage.Assets.Animation.Idle)
+			track.Looped = true
+			track:Play()
+
+			displayModel.PrimaryPart.Anchored = true
+			displayModel:ScaleTo(6)
+			displayModel:PivotTo(
+				displayModel:GetPivot() * CFrame.new(0, (displayModel:GetExtentsSize().Y / 2) + 23, 10)
+			)
+			self.displayModel = displayModel
+		end
+	end)
 	self._trove:Add(PlayerDataServer.PlayerProfileLoaded:Connect(function(player: Player)
 		if player == peek(self.player) then
 			self:CalculateAndSetLockDuration()
+
+			local playerProfile = PlayerDataServer.GetPlayerProfile(player)
+			local pirateOnDisplay = playerProfile.Data.PirateOnDisplay
+			if pirateOnDisplay ~= nil then
+				self.pirateOnDisplay(pirateOnDisplay)
+			end
 		end
 	end))
+
+	self.platformsBeingStolen = self._scope:Value(0) :: Fusion.Value<number>
+	-- local function checkSpeed()
+	-- 	local ownerId = peek(self.Owner)
+	-- 	if not ownerId then
+	-- 		return
+	-- 	end
+	-- 	local player = Players:GetPlayerByUserId(ownerId)
+	-- 	if player then
+	-- 		local char: Model? = player.Character
+	-- 		if char then
+	-- 			local hum = char:FindFirstChildOfClass("Humanoid")
+	-- 			if hum then
+	-- 				hum.WalkSpeed = peek(self.platformsBeingStolen) > 0 and hum.WalkSpeed / 1.5
+	-- 					or StarterPlayer.CharacterWalkSpeed
+	-- 			end
+	-- 		end
+	-- 	end
+	-- end
+	--self._scope:Observer(self.platformsBeingStolen):onBind(checkSpeed)
 
 	local playerTrove = Trove.new()
 	scope:Observer(self.player):onBind(function()
@@ -176,6 +247,7 @@ function Base.new(model: Model): Base
 					:onChange(checkFull)
 			)
 		end))
+		--playerTrove:Add(observeCharacter(player, checkSpeed))
 	end)
 
 	local platformModels = model:FindFirstChild("Platforms"):GetChildren()
@@ -199,7 +271,11 @@ function Base.new(model: Model): Base
 				state[tonumber(platformModel.Name)] = nil
 				self.CharactersInBase:set(state)
 			end
-			platform.trove:Add(platform.stolen:Connect(remove))
+			platform.trove:Add(platform.stolen:Connect(function()
+				self.platformsBeingStolen:set(peek(self.platformsBeingStolen) + 1)
+
+				remove()
+			end))
 			platform.trove:Add(platform.WasReset:Connect(remove))
 
 			platfomsByIndex[tonumber(platform.Model.Name)] = platform
@@ -260,13 +336,13 @@ function Base.new(model: Model): Base
 			end
 		end))
 
-		self.lastLocked:set(tick())
+		self.lastLocked:set(os.time())
 		lockTrove:Add(RunService.Heartbeat:Connect(function()
 			local playerProfile = PlayerDataServer.Profiles[player]
 			if not playerProfile then
 				return
 			end
-			if tick() - peek(self.lastLocked) >= peek(self.lockDuration) then
+			if os.time() - peek(self.lastLocked) >= peek(self.lockDuration) then
 				self:SetLocked(false)
 			end
 		end))
@@ -283,7 +359,7 @@ function Base.new(model: Model): Base
 			end
 			return ""
 		end),
-		Parent = self.Model:FindFirstChild("EntrancePoint"),
+		Parent = self.Model:FindFirstChild("Entrance"):FindFirstChild("EntrancePoint"),
 		Enabled = self._scope:Computed(function(use)
 			return use(self.locked) == true
 		end),
@@ -293,9 +369,9 @@ function Base.new(model: Model): Base
 	local playersAtEntrance = {}
 	local playersInBase = {}
 
-	local entranceZone = Zoneplus.new(model:FindFirstChild("Entrance"))
-	trove:Add(entranceZone)
-	entranceZone.playerEntered:Connect(function(player: Player)
+	local entranceWatcher = VolumeWatcher.new(model:FindFirstChild("Entrance"))
+	entranceWatcher:SetWhitelist({ workspace })
+	entranceWatcher.PlayerEntered.Event:Connect(function(player)
 		if not table.find(playersAtEntrance, player) then
 			table.insert(playersAtEntrance, player)
 		end
@@ -303,13 +379,17 @@ function Base.new(model: Model): Base
 		if player == peek(self.player) then
 			local stealing = PlayerServer.players[tostring(player.UserId)].Stealing
 			if peek(stealing.isStealing) and not peek(self.BaseFull) then
-				PlayerDataServer.GetPlayerProfile(player).Data.Steals += 1
-				self:AddCharacter(player, peek(stealing.characterStealingName))
+				PlayerDataServer.UpdateLeaderstat(player, "Steals", 1)
+				self:AddCharacter(
+					player,
+					peek(stealing.characterStealingName),
+					peek(stealing.characterStealingMutations)
+				)
 				stealing:CancelSteal()
 			end
 		end
 	end)
-	entranceZone.playerExited:Connect(function(player: Player)
+	entranceWatcher.PlayerLeft.Event:Connect(function(player)
 		local entranceIndex = table.find(playersAtEntrance, player)
 		local baseIndex = table.find(playersInBase, player)
 		if entranceIndex and not baseIndex then
@@ -317,21 +397,22 @@ function Base.new(model: Model): Base
 		end
 	end)
 
-	local baseZone = trove:Add(Zoneplus.new(model:FindFirstChild("BaseZone")))
-	baseZone.playerEntered:Connect(function(player: Player)
+	local baseWatcher = VolumeWatcher.new(model:FindFirstChild("BaseZone"))
+	baseWatcher:SetWhitelist({ workspace })
+	baseWatcher.PlayerEntered.Event:Connect(function(player)
 		if not table.find(playersInBase, player) then
 			table.insert(playersInBase, player)
 		end
 
 		local ownerPlayer = peek(self.player)
-		if player == ownerPlayer then
+		if not ownerPlayer or player == ownerPlayer then
 			return
 		end
 		if not table.find(playersAtEntrance, player) or peek(self.locked) then
 			player:LoadCharacter()
 		end
 	end)
-	baseZone.playerExited:Connect(function(player: Player)
+	baseWatcher.PlayerLeft.Event:Connect(function(player)
 		local i = table.find(playersInBase, player)
 		if i then
 			table.remove(playersInBase, i)
@@ -350,7 +431,10 @@ function Base.CalculateAndSetLockDuration(self: Base, customDuration: number?): 
 	self.lockDuration:set(
 		customDuration and customDuration
 			or SharedData.LockedDuration
-				+ (SharedRebirthData.Constants.LockTimerIncrement * playerProfile.Data.Leaderstats.Rebirths)
+				+ (SharedRebirthData.Constants.LockTimerIncrement * math.min(
+					playerProfile.Data.Leaderstats.Rebirths,
+					SharedRebirthData.Constants.LockTimerMaxMult
+				))
 	)
 end
 
@@ -358,9 +442,12 @@ function Base.AddCharacter(
 	self: Base,
 	player: Player,
 	characterName: string,
+	mutations: { string }?,
 	savedData: SharedTypes.SavedPlatformData?,
 	loadedIndex: number?
 )
+	mutations = mutations or {}
+
 	local playerProfileData = PlayerDataServer.GetPlayerProfileData(player)
 
 	if not table.find(playerProfileData.UnlockedCharacters, characterName) then
@@ -379,6 +466,7 @@ function Base.AddCharacter(
 				v.LastCollected = savedData.LastCollectedTime
 			end
 
+			v.Mutations:set(mutations)
 			v.CharacterName:set(characterName)
 			v.CharacterData:set(characterData)
 
@@ -392,6 +480,7 @@ function Base.AddCharacter(
 				playerProfileData.Platforms[i] = {
 					LastCollectedTime = os.time(),
 					CharacterName = characterName,
+					Mutations = if #mutations > 0 then mutations else nil,
 				}
 			end
 
@@ -407,6 +496,7 @@ function Base.AddCharacterAttempt(
 	player: Player,
 	characterName: string,
 	character: Character.Character,
+	mutations: { string }?,
 	ignoreSave: boolean?
 )
 	local charactersAddingState = peek(self.CharactersAdding)
@@ -425,7 +515,7 @@ function Base.AddCharacterAttempt(
 	table.remove(charactersAddingState, charAddingIndex)
 	self.CharactersAdding:set(charactersAddingState)
 
-	self:AddCharacter(player, characterName, ignoreSave)
+	self:AddCharacter(player, characterName, mutations, ignoreSave)
 end
 
 function Base.GetPlatformData(self: Base)
@@ -435,10 +525,12 @@ function Base.GetPlatformData(self: Base)
 		if not charName then
 			continue
 		end
+		local mutations = peek(v.Mutations)
 		table.insert(loadedPlatforms, {
 			platformId = v.Id,
 			characterName = charName,
 			lastCollectedTime = v.LastCollected,
+			mutations = if #mutations > 0 then mutations else nil,
 		})
 	end
 	return loadedPlatforms
@@ -446,7 +538,7 @@ end
 
 function Base.SetLocked(self: Base, locked: boolean, customDuration: number?): ()
 	self:CalculateAndSetLockDuration(customDuration)
-	self.lastLocked:set(locked and tick() or 0)
+	self.lastLocked:set(locked and os.time() or 0)
 	self.locked:set(locked)
 	Events.SetBaseLocked:FireAllClients(self.Id, locked, tostring(peek(self.lastLocked)), peek(self.lockDuration))
 end
@@ -466,6 +558,7 @@ function Base.Reset(self: Base)
 	self.CharactersAdding:set({})
 	self.CharactersInBase:set({})
 	self:ResetAllPlatforms(false)
+	self.pirateOnDisplay(nil)
 	Events.BaseReset:FireAllClients(self.Id)
 end
 
