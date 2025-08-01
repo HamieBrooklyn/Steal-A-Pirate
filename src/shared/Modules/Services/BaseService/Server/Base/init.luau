@@ -186,7 +186,7 @@ function Base.new(model: Model): Base
 			displayModel.PrimaryPart.Anchored = true
 			displayModel:ScaleTo(6)
 			displayModel:PivotTo(
-				displayModel:GetPivot() * CFrame.new(0, (displayModel:GetExtentsSize().Y / 2) + 23, 10)
+				displayModel:GetPivot() * CFrame.new(0, (displayModel:GetExtentsSize().Y / 2), 0)
 			)
 			self.displayModel = displayModel
 		end
@@ -550,7 +550,6 @@ function Base.Load(self: Base)
 	Events.BaseLoaded:FireAllClients({
 		baseId = self.Id,
 		ownerId = peek(self.Owner),
-		lastLockedTime = peek(self.lastLocked),
 		platforms = self:GetPlatformData(),
 	})
 end

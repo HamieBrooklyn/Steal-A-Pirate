@@ -53,7 +53,7 @@ function UnlockFruit.new(player: Player, tool: Tool): UnlockFruit
 	local baseObservers = {}
 	local function baseAdded(base: Base.Base)
 		baseObservers[base.Id] = self._scope:Observer(base.locked):onBind(function()
-			if peek(base.locked) then
+			if peek(base.locked) and peek(base.Owner) ~= player.UserId then
 				local playerBasesState = table.clone(peek(self.playerBases))
 				table.insert(playerBasesState, base)
 				self.playerBases:set(playerBasesState)
@@ -95,9 +95,11 @@ function UnlockFruit.Equipped(self: UnlockFruit): ()
 	self.unlockMenu = UnlockMenu(self._scope, {
 		playerBases = self.playerBases,
 		baseSelected = function(base: Base.Base)
+			print(base)
 			local success = useFruitAttempt:InvokeServer(self.tool, {
 				baseId = base.Id,
 			})
+			print(success)
 			if success then
 				local ownerId = peek(base.Owner)
 				if not ownerId then

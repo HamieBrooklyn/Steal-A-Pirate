@@ -18,7 +18,7 @@ local RebirthClient = {
 
 function RebirthClient.init()
 	local scope = scoped(Fusion)
-	RebirthClient.rebirths = scope:Value(0) :: Fusion.Value<number, any>
+	RebirthClient.rebirths = scope:Value(-1) :: Fusion.Value<number, any>
 
 	local menu = require(script.RebirthMenu).new(
 		player:WaitForChild("PlayerGui"):WaitForChild("Rebirths"),

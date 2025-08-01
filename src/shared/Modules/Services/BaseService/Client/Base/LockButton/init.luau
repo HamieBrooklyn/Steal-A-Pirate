@@ -105,6 +105,7 @@ function LockButton.Heartbeat(self: LockButton)
 	-- 	+ (SharedRebirthData.Constants.LockTimerIncrement * peek(RebirthClient.rebirths))
 	local duration = peek(self.lockDuration)
 	self.secondsLeft:set(math.clamp(duration - (os.time() - peek(self.lastLocked)), 0, duration))
+	--print(peek(self.secondsLeft))
 	if peek(self.secondsLeft) == 0 then
 		self.locked:set(false)
 	else

@@ -67,8 +67,16 @@ function PlayerServer.init()
 			descendantAdded(v)
 		end
 		trove:Add(character.DescendantAdded:Connect(descendantAdded))
-
+		local hum = character:FindFirstChildOfClass("Humanoid")
 		player.CharacterAppearanceLoaded:Connect(function()
+			local humanoidDescription = hum:GetAppliedDescription()
+			humanoidDescription.Head = 0
+			humanoidDescription.Torso = 0
+			humanoidDescription.RightLeg = 0
+			humanoidDescription.LeftLeg = 0
+			humanoidDescription.RightArm = 0
+			humanoidDescription.LeftArm = 0
+			hum:ApplyDescription(humanoidDescription)
 			task.spawn(function()
 				task.wait()
 				for _, v in pairs(character:GetChildren()) do

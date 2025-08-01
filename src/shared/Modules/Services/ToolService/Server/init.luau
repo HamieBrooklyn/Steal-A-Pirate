@@ -345,7 +345,7 @@ function ToolServer.init()
 		params.FilterType = Enum.RaycastFilterType.Include
 		params.FilterDescendantsInstances = { workspace.Baseplate }
 
-		local origin = rayGun:FindFirstChild("Handle").Position
+		local origin = tool:FindFirstChild("Handle").Position
 		if (origin - position).Magnitude > 20 then
 			return
 		end
@@ -370,23 +370,21 @@ function ToolServer.init()
 		)
 		assert(data and typeof(data) == "table", "Sent fruit data was not of type table")
 
-		if fruitTool.Name == "Unlock" then
+		if fruitTool.Name == "Unlock Unlock Fruit" then
 			local baseId = data.baseId
 			assert(baseId and typeof(baseId) == "string", "Sent base id was not of type string")
 
-			local base = BaseServer.GetPlayerBase(player)
-			if not base then
-				return false
-			end
+			local base = BaseServer.Bases[baseId]
+			assert(base, `{baseId} was not a valid base id`)
+
+			assert(peek(base.Owner) ~= player.UserId, `You cannot unlock your own base`)
 			if not peek(base.locked) then
 				return false
 			end
-
 			local playerProfile = PlayerDataServer.GetPlayerProfile(player)
 			if not playerProfile then
 				return
 			end
-
 			assert(playerProfile.Data.Tools["Unlock Unlock Fruit"], `{player.Name} did not own a unlock fruit`)
 			ToolServer.RemoveToolFromPlayer(player, fruitTool, true)
 

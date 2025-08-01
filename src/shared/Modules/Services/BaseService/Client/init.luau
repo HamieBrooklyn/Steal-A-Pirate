@@ -73,7 +73,6 @@ function BaseClient.init()
 		local base = BaseClient.bases[baseId]
 		if base then
 			base.Owner:set(ownerId)
-			base.lastLocked:set(baseData.lastLockedTime)
 			for _, v in baseData.platforms do
 				loadPlatform(base.Platforms[v.platformId], {
 					lastCollectedTime = v.lastCollectedTime,

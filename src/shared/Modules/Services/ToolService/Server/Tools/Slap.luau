@@ -1,4 +1,5 @@
 local Debris = game:GetService("Debris")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
@@ -51,7 +52,6 @@ function Slap.new(player: Player, tool: Tool): Slap
 	self.root = self.scope:Value(nil)
 
 	local handle: BasePart = tool:FindFirstChild("Handle")
-	self.toucher = Toucher.new(handle)
 
 	self.hitTrove = Trove.new()
 	self.trove:Add(self.hitTrove)
@@ -70,7 +70,11 @@ function Slap.new(player: Player, tool: Tool): Slap
 				Sound.new(SlapSounds.Swing, handle):Play()
 
 				self.hitTrove:Clean()
-				self.hitTrove:Add(self.toucher.PlayerTouched:Connect(function(playerHit: Player)
+				self.hitTrove:Add(tool:FindFirstChild("Hit").Touched:Connect(function(hit: BasePart)
+					local playerHit = Players:GetPlayerFromCharacter(hit.Parent)
+					if not playerHit then
+						return
+					end
 					if playerHit == player or table.find(self.playerHitCooldown, playerHit) then
 						return
 					end

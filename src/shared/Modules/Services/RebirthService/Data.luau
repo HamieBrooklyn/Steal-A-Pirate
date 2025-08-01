@@ -7,6 +7,7 @@ SharedRebirthData.Constants = {
 	LockTimerIncrement = 10,
 	LockTimerMaxMult = 6,
 
+	OverCostMult = 500,
 	OverCost = 10_000_000,
 }
 

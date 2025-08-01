@@ -116,7 +116,13 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 			-- end
 
 			local CashProgress = math.clamp(
-				(CashState / (levelDataState and levelDataState.CashRequired or SharedData.Constants.OverCost)),
+				(
+					CashState
+					/ (
+						levelDataState and levelDataState.CashRequired
+						or (SharedData.Constants.OverCost * (use(self.rebirths) * SharedData.Constants.OverCostMult))
+					)
+				),
 				0,
 				1
 			)
@@ -148,6 +154,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 			end
 			requiredCharacters:set(requiredCharactersState)
 
+			--print(requiredCharactersState)
 			local hasAll = true
 			for _, v in requiredCharactersState do
 				if not v then
@@ -168,6 +175,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 		end
 		checkOwnedCharacters()
 	end)
+	Players.LocalPlayer:GetAttributeChangedSignal("ProfileLoaded"):Connect(checkOwnedCharacters)
 
 	self.random = self.scope:Value(nil) :: Fusion.Value<Random?, any>
 
@@ -184,14 +192,20 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 				self.Cash:set(value)
 
 				local levelDataState: RebirthLevel = peek(self.rebirthLevelData)
-				local required = levelDataState and levelDataState.CashRequired or SharedData.Constants.OverCost
+				local required = levelDataState and levelDataState.CashRequired
+					or SharedData.Constants.OverCost * (peek(self.rebirths) * SharedData.Constants.OverCostMult)
 				self.hasEnoughCash:set(value >= required)
-				self.CashRequiredText:set(`{abbreviateNumber(value)}/{abbreviateNumber(required)}`)
 				return function() end
 			end))
 		end
 	end)
 
+	self.CashRequiredText = self.scope:Computed(function(use)
+		local levelDataState: RebirthLevel = use(self.rebirthLevelData)
+		local required = levelDataState and levelDataState.CashRequired
+			or SharedData.Constants.OverCost * (use(self.rebirths) * SharedData.Constants.OverCostMult)
+		return `{abbreviateNumber(use(self.Cash))}/{abbreviateNumber(required)}`
+	end)
 	self.seed = self.scope:Computed(function(use)
 		local rootSeedState = use(self.rootSeed)
 		local rebirthsState = use(self.rebirths)
