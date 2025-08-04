@@ -209,7 +209,6 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 		local levelDataState: RebirthLevel = peek(self.rebirthLevelData)
 		local required = levelDataState and levelDataState.CashRequired
 			or SharedData.Constants.OverCost * (use(self.rebirths) * SharedData.Constants.OverCostMult)
-		print(use(PlayerDataClient.leaderstats.Cash))
 		return `{abbreviateNumber(use(PlayerDataClient.leaderstats.Cash))}/{abbreviateNumber(required)}`
 	end)
 	self.seed = self.scope:Computed(function(use)

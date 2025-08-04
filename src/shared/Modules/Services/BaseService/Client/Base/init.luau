@@ -186,7 +186,9 @@ function Base.new(model: Model): Base
 	local heartbeatCon: RBXScriptConnection?
 	local ownerTrove = Trove.new()
 	scope:Observer(owner):onChange(function()
-		checkMultiplierText()
+		if peek(owner) == Players.LocalPlayer.UserId and PlayerDataClient.loaded then
+			checkMultiplierText()
+		end
 		ownerTrove:Clean()
 
 		if heartbeatCon then
@@ -213,7 +215,7 @@ function Base.new(model: Model): Base
 			if not platformModel:IsA("Model") then
 				return
 			end
-			local platform = Platform.new(platformModel, owner, model, getMultiplier)
+			local platform = Platform.new(platformModel, owner, model)
 			ownerTrove:Add(platform)
 			platforms[platformModel:GetAttribute("PlatformId")] = platform
 		end))
