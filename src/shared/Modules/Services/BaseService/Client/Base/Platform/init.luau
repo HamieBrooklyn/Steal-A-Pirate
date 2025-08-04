@@ -10,6 +10,7 @@ local Services = ReplicatedStorage.Shared.Modules.Services
 local CollectorBoard = require(script.CollectorBoard)
 
 local GuiAnimationClient = require(Services.GuiAnimationService.Client)
+local PlayerDataClient = require(Services.PlayerDataService.Client)
 local SettingsClient = require(Services.SettingsService.Client)
 local PopupClient = require(Services.PopupService.Client)
 
@@ -64,15 +65,14 @@ type self = {
 	Emitter: Particle.Particle?,
 	animatedHighlight: AnimatedHighlight.AnimatedHighlight,
 
-	getMultiplier: (number) -> number,
+	--getMultiplier: (number) -> number,
 }
 export type Platform = typeof(setmetatable({} :: self, Platform))
 
 function Platform.new(
 	model: Model,
 	owner: Fusion.Value<string?, any>,
-	baseModel: Model,
-	getMultiplier: (number) -> number
+	baseModel: Model --getMultiplier: (number) -> number
 ): Platform
 	local self = setmetatable({}, Platform) :: Platform
 
@@ -92,13 +92,13 @@ function Platform.new(
 	self.Generated = atom(0)
 	self.Mutations = atom({})
 
-	self.getMultiplier = function(ownerId: number, ignoreFriendBoost: boolean?)
+	--[[ self.getMultiplier = function(ownerId: number)
 		local mutMult = 0
 		for _, v in self.Mutations() do
 			mutMult += SharedSpawningData.Mutations[v].Mult
 		end
-		return getMultiplier(ownerId, ignoreFriendBoost) + mutMult
-	end
+		return getMultiplier(ownerId) + mutMult
+	end ]]
 
 	local characterName = scope:Value(nil)
 	self.CharacterName = characterName
@@ -315,7 +315,7 @@ function Platform.LoadGenerated(self: Platform)
 		math.abs(
 			math.floor(
 				(os.time() - peek(self.LastCollected))
-					* (self.CharacterData.Cashflow * self.getMultiplier(peek(self.Owner), true))
+					* (self.CharacterData.Cashflow * peek(PlayerDataClient.cashMultiplier))
 			)
 		)
 	)
@@ -325,8 +325,8 @@ function Platform.Heartbeat(self: Platform)
 	local data = self.CharacterData
 	if data then
 		local ownerUserId = peek(self.Owner)
-		local mult = self.getMultiplier(ownerUserId)
-		-- print(mult)
+		local mult = peek(PlayerDataClient.cashMultiplier)
+		print(mult)
 
 		local generated = math.abs(math.floor(self.Generated() + (data.Cashflow * mult)))
 		if

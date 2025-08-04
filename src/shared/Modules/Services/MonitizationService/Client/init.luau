@@ -38,6 +38,10 @@ MonitizationClient.productPurchased = Signal.new()
 
 MonitizationClient.isInPrompt = false
 
+function MonitizationClient.OwnsPass(id: number)
+	return MonitizationClient.playerGamepasses[id] and peek(MonitizationClient.playerGamepasses[id]) == true
+end
+
 function MonitizationClient.SetPrompting(id: number): boolean
 	if peek(MonitizationClient.promptingId) == -1 then
 		MonitizationClient.promptingId:set(id)
