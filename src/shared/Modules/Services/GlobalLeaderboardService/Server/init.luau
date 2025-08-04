@@ -35,9 +35,11 @@ function GlobalLeaderboardServer.init()
 		return listedData
 	end)
 
+	local firstUpdate = true
 	local lastUpdate = 0
 	RunService.Heartbeat:Connect(function()
-		if time() - lastUpdate > SharedData.UpdateInterval then
+		if time() - lastUpdate > SharedData.UpdateInterval or firstUpdate then
+			firstUpdate = false
 			lastUpdate = time()
 			for _, v in GlobalLeaderboardServer.globalLeaderboards do
 				GlobalLeaderboardServer.globalLeaderboardUpdated:FireAllClients(v.id, v:Update())
