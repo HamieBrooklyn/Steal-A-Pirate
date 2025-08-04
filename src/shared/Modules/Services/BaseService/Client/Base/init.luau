@@ -8,7 +8,7 @@ local Services = Modules.Services
 local RebirthService = Services.RebirthService
 
 local MonitizationClient = require(Services.MonitizationService.Client)
-local PlayerClient = require(Services.PlayerService.Client)
+local PlayerDataClient = require(Services.PlayerDataService.Client)
 local RebirthClient = require(RebirthService.Client)
 
 local observeChildren = require(Modules.Utilities.observeChildren)
@@ -52,7 +52,7 @@ type self = {
 }
 export type Base = typeof(setmetatable({} :: self, Base))
 
-function getMultiplier(ownerId: number, ignoreFriendBoost: boolean?)
+--[[ function getMultiplier(ownerId: number, ignoreFriendBoost: boolean?)
 	if not ownerId then
 		return 1
 	end
@@ -76,7 +76,7 @@ function getMultiplier(ownerId: number, ignoreFriendBoost: boolean?)
 
 	-- print(mult)
 	return mult
-end
+end ]]
 
 function Base.new(model: Model): Base
 	local self = setmetatable({}, Base) :: Base
@@ -125,9 +125,11 @@ function Base.new(model: Model): Base
 
 	local cashMultText = self._scope:Value("")
 	local function checkMultiplierText()
-		cashMultText:set(`x{math.floor(getMultiplier(peek(self.Owner)) * 100) / 100}`)
+		cashMultText:set(`x{math.floor(peek(PlayerDataClient.cashMultiplier) * 100) / 100}`)
 	end
-	self._scope:Observer(RebirthClient.rebirths):onBind(checkMultiplierText)
+	PlayerDataClient.LeaderstatsLoaded:Connect(function()
+		self._scope:Observer(RebirthClient.rebirths):onBind(checkMultiplierText)
+	end)
 
 	self._trove:Add(
 		Streamable.new(model, "Monitization"):Observe(function(monitizationFold: Folder, foldTrove: Trove.Trove)
