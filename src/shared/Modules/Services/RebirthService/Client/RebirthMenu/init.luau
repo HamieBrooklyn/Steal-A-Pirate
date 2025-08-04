@@ -6,6 +6,7 @@ local Modules = ReplicatedStorage.Shared.Modules
 local Services = Modules.Services
 
 local SpawningClient = require(Services.SpawningService.Client)
+local PlayerDataClient = require(Services.PlayerDataService.Client)
 local BaseClient = require(Services.BaseService.Client)
 
 local Platform = require(Services.BaseService.Client.Base.Platform)
@@ -83,7 +84,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	self.rebirths = rebirths :: Fusion.Value<number?, any>
 
 	self.CashVal = self.scope:Value(nil) :: Fusion.Value<NumberValue?, any>
-	self.Cash = self.scope:Value(nil) :: Fusion.Value<number?, any>
+	--self.Cash = self.scope:Value(nil) :: Fusion.Value<number?, any>
 
 	self.CashRequiredText = self.scope:Value("") :: Fusion.Value<string, any>
 
@@ -100,7 +101,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	self.checkProgress = self.scope:Computed(function(use)
 		local progress = 0
 
-		local CashState: number? = use(self.Cash)
+		local CashState: number? = use(PlayerDataClient.leaderstats.Cash)
 		local levelDataState: RebirthLevel? = peek(self.rebirthLevelData)
 
 		if CashState then
@@ -126,6 +127,10 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 				0,
 				1
 			)
+
+			local required = levelDataState and levelDataState.CashRequired
+				or SharedData.Constants.OverCost * (peek(self.rebirths) * SharedData.Constants.OverCostMult)
+			self.hasEnoughCash:set(CashState >= required)
 
 			-- local itemProgress = if totalItems > 0 then fulfilled / totalItems else 0
 			-- local finalProgress = (CashProgress + itemProgress) / 2
@@ -189,22 +194,22 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 		local CashValState: NumberValue? = peek(self.CashVal)
 		if CashValState then
 			CashChangeCleanup = self.trove:Add(Observers.observeProperty(CashValState, "Value", function(value)
-				self.Cash:set(value)
+				--self.Cash:set(value)
 
-				local levelDataState: RebirthLevel = peek(self.rebirthLevelData)
+				--[[ local levelDataState: RebirthLevel = peek(self.rebirthLevelData)
 				local required = levelDataState and levelDataState.CashRequired
 					or SharedData.Constants.OverCost * (peek(self.rebirths) * SharedData.Constants.OverCostMult)
-				self.hasEnoughCash:set(value >= required)
+				self.hasEnoughCash:set(value >= required) ]]
 				return function() end
 			end))
 		end
 	end)
 
 	self.CashRequiredText = self.scope:Computed(function(use)
-		local levelDataState: RebirthLevel = use(self.rebirthLevelData)
+		local levelDataState: RebirthLevel = peek(self.rebirthLevelData)
 		local required = levelDataState and levelDataState.CashRequired
 			or SharedData.Constants.OverCost * (use(self.rebirths) * SharedData.Constants.OverCostMult)
-		return `{abbreviateNumber(use(self.Cash))}/{abbreviateNumber(required)}`
+		return `{abbreviateNumber(use(PlayerDataClient.leaderstats.Cash))}/{abbreviateNumber(required)}`
 	end)
 	self.seed = self.scope:Computed(function(use)
 		local rootSeedState = use(self.rootSeed)
@@ -305,7 +310,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	self.scope:Hydrate(requirementsFrame:WaitForChild("ProgressBar"):WaitForChild("Fill"))({
 		Size = self.scope:Spring(
 			self.scope:Computed(function(use)
-				return use(self.menuShown) and UDim2.fromScale(use(self.checkProgress), 1) or UDim2.fromScale(0, 1)
+				return use(self.menuShown) and UDim2.fromScale(peek(self.checkProgress), 1) or UDim2.fromScale(0, 1)
 			end),
 			25,
 			0.9
@@ -314,7 +319,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	self.scope:Hydrate(requirementsFrame:WaitForChild("ProgressBar"):WaitForChild("BackFill"))({
 		Size = self.scope:Spring(
 			self.scope:Computed(function(use)
-				return use(self.menuShown) and UDim2.fromScale(use(self.checkProgress), 1) or UDim2.fromScale(0, 1)
+				return use(self.menuShown) and UDim2.fromScale(peek(self.checkProgress), 1) or UDim2.fromScale(0, 1)
 			end),
 			10,
 			0.9
@@ -385,7 +390,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	-- Updating rebirth button:
 	self.scope:Hydrate(rebirthButton)({
 		Text = self.scope:Computed(function(use)
-			return use(self.canRebirth) and "REBIRTH!" or "UNABLE."
+			return peek(self.canRebirth) and "REBIRTH!" or "UNABLE."
 		end),
 		Interactable = self.canRebirth,
 		[OnEvent("MouseButton1Click")] = function()
