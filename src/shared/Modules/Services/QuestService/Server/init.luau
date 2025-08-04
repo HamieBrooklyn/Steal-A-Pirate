@@ -64,7 +64,7 @@ function QuestServer.init()
 				quest
 					:NewStep({
 						stepName = "BuyCharacter",
-						texts = { ["Main"] = "Follow the arrows and recruit your first pirate" },
+						texts = { ["Main"] = "Follow the arrows and recruit your first jujutsu" },
 						finished = function()
 							AnalyticsService:LogFunnelStepEvent(
 								player,
@@ -77,20 +77,20 @@ function QuestServer.init()
 					}, "Main Portals", "Weak Loafy")
 					:NewStep({
 						stepName = "GetCharacterToBase",
-						texts = { ["Main"] = "Wait for the pirate to reach your base" },
+						texts = { ["Main"] = "Wait for the jujutsu to reach your base" },
 						finished = function()
 							AnalyticsService:LogFunnelStepEvent(
 								player,
 								"Tutorial",
 								_G.funnelSessionId,
 								2,
-								"Wait for pirate to get to base"
+								"Wait for the jujutsu to get to base"
 							)
 						end,
 					}, "Weak Loafy")
 					:NewStep({
 						stepName = "CollectPlatform",
-						texts = { ["Main"] = "Collect cash earned by your pirate" },
+						texts = { ["Main"] = "Collect cash earned by your jujutsu" },
 						finished = function()
 							AnalyticsService:LogFunnelStepEvent(
 								player,
@@ -103,7 +103,7 @@ function QuestServer.init()
 					}, "Weak Loafy")
 					:NewStep({
 						stepName = "TimedMessage",
-						texts = { ["Main"] = "Steal pirates from other players! Good luck!" },
+						texts = { ["Main"] = "Steal jujutsus from other players! Good luck!" },
 						finished = function()
 							AnalyticsService:LogFunnelStepEvent(
 								player,
