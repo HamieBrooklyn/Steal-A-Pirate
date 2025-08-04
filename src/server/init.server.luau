@@ -1,5 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+--local ServerScriptService = game:GetService("ServerScriptService")
 
 local spawnDescendants = require(ReplicatedStorage.Shared.Modules.Utilities.spawnDescendants)
 
