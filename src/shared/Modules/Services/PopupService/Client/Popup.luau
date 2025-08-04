@@ -26,7 +26,7 @@ local function Popup(scope: Fusion.Scope<any>, props: SharedTypes.PopupProps)
 	local popup = New(scope, "TextLabel")({
 		BackgroundTransparency = 1,
 
-		FontFace = Font.new("rbxasset://fonts/families/PressStart2P.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal),
+		FontFace = Font.new(Font.fromEnum(Enum.Font.DenkOne).Family, Enum.FontWeight.Bold, Enum.FontStyle.Normal),
 		Text = props.message,
 		TextScaled = true,
 		TextColor3 = Color3.new(1, 1, 1),

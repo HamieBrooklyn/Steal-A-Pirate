@@ -1,10 +1,10 @@
 local Codes = {}
 
-Codes["AYCE"] = {
+Codes["GORO"] = {
 	RewardType = "Character",
 	ConditionTypes = { "FreeTimedCharacter", "Character" },
 
-	CharacterName = "Fire Fist",
+	CharacterName = "Goro (Rare)",
 }
 
 Codes["FUN"] = {

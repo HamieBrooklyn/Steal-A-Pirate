@@ -31,7 +31,7 @@ SharedSpinnerData.Rewards = {
 		Weight = 0.01,
 		Angle = 90,
 		Rewards = { "Character" },
-		Values = { ["Character"] = { "Large Mum" } },
+		Values = { ["Character"] = { "Mako (Awakened)" } },
 	},
 	[4] = {
 		Weight = 0.55,

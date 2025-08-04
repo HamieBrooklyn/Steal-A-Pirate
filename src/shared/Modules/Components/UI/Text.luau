@@ -40,7 +40,7 @@ local function Label(
 		TextWrapped = props.richText,
 		FontFace = Computed(scope, function(use)
 			return use(props.font)
-				or Font.new("rbxasset://fonts/families/PressStart2P.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+				or Font.new(Font.fromEnum(Enum.Font.DenkOne).Family, Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 		end),
 		TextXAlignment = props.textXAlignment,
 		TextTransparency = props.transparency,

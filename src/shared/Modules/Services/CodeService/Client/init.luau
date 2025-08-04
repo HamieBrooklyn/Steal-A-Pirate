@@ -39,7 +39,7 @@ function CodeClient.init()
 
 	local hasntClaimedFreeCharacter = Value(scope, false)
 	Net:Connect("CodeRedeemed", function(code: string)
-		if code == "AYCE" then
+		if code == "GORO" then
 			hasntClaimedFreeCharacter:set(false)
 		end
 	end)
@@ -50,7 +50,7 @@ function CodeClient.init()
 			hasntClaimed = hasntClaimedFreeCharacter,
 		})
 		for _, v in PlayerDataClient.getRedeemedCodes:InvokeServer() do
-			if v == "AYCE" then
+			if v == "GORO" then
 				return
 			end
 		end

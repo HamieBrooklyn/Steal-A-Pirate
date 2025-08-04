@@ -167,7 +167,7 @@ function Base.new(model: Model): Base
 		if displayModel then
 			displayModel = displayModel:Clone() :: Model
 			local entrance: BasePart = self.Model:FindFirstChild("Entrance")
-			displayModel:PivotTo(entrance:GetPivot() * CFrame.new(0, entrance.Size.Y / 2, 0))
+			displayModel:PivotTo(entrance:GetPivot() * CFrame.new(0, (entrance.Size.Y / 2) + 25, 10))
 			displayModel.Parent = self.Model
 			for _, v in displayModel:GetDescendants() do
 				if v:IsA("BasePart") then
@@ -185,9 +185,7 @@ function Base.new(model: Model): Base
 
 			displayModel.PrimaryPart.Anchored = true
 			displayModel:ScaleTo(6)
-			displayModel:PivotTo(
-				displayModel:GetPivot() * CFrame.new(0, (displayModel:GetExtentsSize().Y / 2), 0)
-			)
+			displayModel:PivotTo(displayModel:GetPivot() * CFrame.new(0, (displayModel:GetExtentsSize().Y / 2), 0))
 			self.displayModel = displayModel
 		end
 	end)

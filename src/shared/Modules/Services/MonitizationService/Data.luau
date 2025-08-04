@@ -110,11 +110,11 @@ SharedMonitizationData.Products = {
 	},
 
 	["LimitedCharacter"] = {
-		Id = 3336689904,
+		Id = 3353013503,
 		ProductType = "Product",
 		ServerFunctionTypes = { "Character" },
 
-		CharacterNames = { "Zuru" },
+		CharacterNames = { "Goro (Mentor)" },
 	},
 
 	["2XServerLuck"] = {

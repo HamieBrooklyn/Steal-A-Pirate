@@ -42,8 +42,8 @@ function SpinnerClient.init()
 			BottomText = "0.5%",
 		},
 		[3] = {
-			Title = "Large Mum",
-			Image = "rbxassetid://128261415837741",
+			Title = "Mako (Awakened)",
+			Image = "rbxassetid://125682188382360",
 			BottomText = "1%",
 		},
 		[4] = {

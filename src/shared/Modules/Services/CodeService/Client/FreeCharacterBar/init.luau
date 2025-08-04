@@ -51,7 +51,7 @@ local function FreeCharacterBar(
 			size:set(UDim2.fromScale(math.min(secondsSinceFirstSession / seconds, 1), 1))
 
 			local completed = secondsLeft <= 0
-			timeLabel.Text = if not completed then formatTime(secondsLeft) else `Use code "AYCE" to claim reward`
+			timeLabel.Text = if not completed then formatTime(secondsLeft) else `Use code "GORO" to claim reward`
 			fillGradient.gradient:set(if not completed then Gradients.Banana else Gradients.Apple)
 			statusGradient.gradient:set(if not completed then Gradients.Banana else Gradients.Apple)
 		end)
