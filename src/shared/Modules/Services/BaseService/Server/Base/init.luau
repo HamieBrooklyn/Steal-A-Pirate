@@ -185,9 +185,7 @@ function Base.new(model: Model): Base
 
 			displayModel.PrimaryPart.Anchored = true
 			displayModel:ScaleTo(6)
-			displayModel:PivotTo(
-				displayModel:GetPivot() * CFrame.new(0, (displayModel:GetExtentsSize().Y / 2), 0)
-			)
+			displayModel:PivotTo(displayModel:GetPivot() * CFrame.new(0, (displayModel:GetExtentsSize().Y / 2), 0))
 			self.displayModel = displayModel
 		end
 	end)
@@ -369,7 +367,7 @@ function Base.new(model: Model): Base
 	local playersAtEntrance = {}
 	local playersInBase = {}
 
-	local entranceWatcher = VolumeWatcher.new(model:FindFirstChild("Entrance"))
+	--[[ local entranceWatcher = VolumeWatcher.new(model:FindFirstChild("Entrance"))
 	entranceWatcher:SetWhitelist({ workspace })
 	entranceWatcher.PlayerEntered.Event:Connect(function(player)
 		if not table.find(playersAtEntrance, player) then
@@ -417,7 +415,7 @@ function Base.new(model: Model): Base
 		if i then
 			table.remove(playersInBase, i)
 		end
-	end)
+	end) ]]
 
 	return self
 end
