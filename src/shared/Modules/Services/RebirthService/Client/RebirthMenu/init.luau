@@ -102,7 +102,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 		local progress = 0
 
 		local CashState: number? = use(PlayerDataClient.leaderstats.Cash)
-		local levelDataState: RebirthLevel? = peek(self.rebirthLevelData)
+		local levelDataState: RebirthLevel? = use(self.rebirthLevelData)
 
 		if CashState then
 			-- local requiredCharactersState = use(requiredCharacters)
@@ -206,7 +206,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	end)
 
 	self.CashRequiredText = self.scope:Computed(function(use)
-		local levelDataState: RebirthLevel = peek(self.rebirthLevelData)
+		local levelDataState: RebirthLevel = use(self.rebirthLevelData)
 		local required = levelDataState and levelDataState.CashRequired
 			or SharedData.Constants.OverCost * (use(self.rebirths) * SharedData.Constants.OverCostMult)
 		return `{abbreviateNumber(use(PlayerDataClient.leaderstats.Cash))}/{abbreviateNumber(required)}`
@@ -310,7 +310,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	self.scope:Hydrate(requirementsFrame:WaitForChild("ProgressBar"):WaitForChild("Fill"))({
 		Size = self.scope:Spring(
 			self.scope:Computed(function(use)
-				return use(self.menuShown) and UDim2.fromScale(peek(self.checkProgress), 1) or UDim2.fromScale(0, 1)
+				return use(self.menuShown) and UDim2.fromScale(use(self.checkProgress), 1) or UDim2.fromScale(0, 1)
 			end),
 			25,
 			0.9
@@ -319,7 +319,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	self.scope:Hydrate(requirementsFrame:WaitForChild("ProgressBar"):WaitForChild("BackFill"))({
 		Size = self.scope:Spring(
 			self.scope:Computed(function(use)
-				return use(self.menuShown) and UDim2.fromScale(peek(self.checkProgress), 1) or UDim2.fromScale(0, 1)
+				return use(self.menuShown) and UDim2.fromScale(use(self.checkProgress), 1) or UDim2.fromScale(0, 1)
 			end),
 			10,
 			0.9
@@ -390,7 +390,7 @@ function RebirthMenu.new(menu: ScreenGui, rebirths: Fusion.Value<number, any>): 
 	-- Updating rebirth button:
 	self.scope:Hydrate(rebirthButton)({
 		Text = self.scope:Computed(function(use)
-			return peek(self.canRebirth) and "REBIRTH!" or "UNABLE."
+			return use(self.canRebirth) and "REBIRTH!" or "UNABLE."
 		end),
 		Interactable = self.canRebirth,
 		[OnEvent("MouseButton1Click")] = function()
