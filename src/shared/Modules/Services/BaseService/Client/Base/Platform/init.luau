@@ -326,7 +326,10 @@ function Platform.Heartbeat(self: Platform)
 	if data then
 		local ownerUserId = peek(self.Owner)
 		local mult = peek(PlayerDataClient.cashMultiplier)
-		print(mult)
+
+		if not mult then
+			return
+		end
 
 		local generated = math.abs(math.floor(self.Generated() + (data.Cashflow * mult)))
 		if

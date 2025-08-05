@@ -2,6 +2,8 @@ local BadgeService = game:GetService("BadgeService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
+local PlayerDataClient = require(ReplicatedStorage.Shared.Modules.Services.PlayerDataService.Client)
+
 local Platform = require(script.Base.Platform)
 
 local SharedTypes = require(script.Parent.Types)
@@ -59,7 +61,10 @@ function BaseClient.init()
 		platform.LastCollected:set(data.lastCollectedTime)
 		platform.Mutations(data.mutations or {})
 		platform.CharacterName:set(data.characterName)
-		platform:LoadGenerated()
+
+		PlayerDataClient.HasLoaded():andThen(function()
+			platform:LoadGenerated()
+		end)
 
 		local base = BaseClient.bases[data.baseId]
 		if data.characterName and base then
