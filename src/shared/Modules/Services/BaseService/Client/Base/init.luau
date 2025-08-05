@@ -44,7 +44,7 @@ type self = {
 	locked: Fusion.Value<boolean, any>,
 	isFull: Fusion.Value<boolean, any>,
 
-	playersStealing: Fusion.Value<{ Player }>,
+	playersStealing: Fusion.Value<{ Player }, any>,
 
 	lockButton: LockButton.LockButton?,
 
@@ -187,6 +187,7 @@ function Base.new(model: Model): Base
 	local ownerTrove = Trove.new()
 	scope:Observer(owner):onChange(function()
 		if peek(owner) == Players.LocalPlayer.UserId and PlayerDataClient.loaded then
+			print("Here")
 			checkMultiplierText()
 		end
 		ownerTrove:Clean()
